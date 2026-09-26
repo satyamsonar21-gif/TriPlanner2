@@ -126,7 +126,9 @@ export type FactSourceType =
   | 'SCORED_ALTERNATIVE'
   | 'SIMULATION_DIFF'
   | 'ROUTE_FEASIBILITY'
-  | 'OPERATOR_QUEUE';
+  | 'OPERATOR_QUEUE'
+  | 'EXTERNAL_WEATHER'
+  | 'EXTERNAL_EVENT';
 
 export interface GroundedFactReference {
   factId: string;
@@ -157,7 +159,14 @@ export type AiToolName =
   | 'get_operator_tour_status'
   | 'get_operational_conflicts'
   | 'plan_deterministic_trip'
-  | 'apply_journey_change';
+  | 'apply_journey_change'
+  | 'get_current_weather'
+  | 'get_weather_forecast'
+  | 'get_active_external_alerts'
+  | 'get_journey_external_impacts'
+  | 'get_event_details'
+  | 'get_provider_freshness'
+  | 'explain_weather_impact';
 
 export interface AiToolCallRequest {
   toolName: AiToolName;

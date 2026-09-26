@@ -27,6 +27,7 @@ import {
 } from '@/domains/journey-engine';
 import { ChangeReviewPanel } from '@/components/journey-engine';
 import { TravelerAiCompanionPanel } from '@/components/ai';
+import { TravelerWeatherAlertBanner } from '@/components/external-events/TravelerWeatherAlertBanner';
 
 export const TravelerDashboardPage: React.FC = () => {
   const { user } = useAuth();

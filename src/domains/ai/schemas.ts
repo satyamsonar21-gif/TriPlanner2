@@ -74,6 +74,13 @@ export const ALLOWLISTED_AI_TOOLS: ReadonlySet<AiToolName> = new Set([
   'get_operational_conflicts',
   'plan_deterministic_trip',
   'apply_journey_change',
+  'get_current_weather',
+  'get_weather_forecast',
+  'get_active_external_alerts',
+  'get_journey_external_impacts',
+  'get_event_details',
+  'get_provider_freshness',
+  'explain_weather_impact',
 ]);
 
 export const SUPPORTED_CURRENCIES: ReadonlySet<string> = new Set([

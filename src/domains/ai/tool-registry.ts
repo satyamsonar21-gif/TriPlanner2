@@ -21,6 +21,11 @@ import {
   sanitizeUntrustedExternalText,
   verifyJourneyAccessAuthorization,
 } from './security-guard';
+import { sharedExternalEventImpactCoordinator } from '@/domains/external-events/impact-coordinator';
+import {
+  sharedFixtureProvider,
+  sharedOpenMeteoProvider,
+} from '@/domains/external-events/providers/external-event-provider';
 import type {
   AiErrorCategory,
   AiToolExecutionTrace,
@@ -1150,6 +1155,342 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
           snapshot: postSnap,
           changeRequest: applyResult.changeRequest,
         }),
+      };
+    },
+  },
+
+  get_current_weather: {
+    name: 'get_current_weather',
+    description:
+      'Retrieve verified, normalized atmospheric observations (temperature, wind, precipitation) for a coordinate or journey location.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 8000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      let lat = typeof args.latitude === 'number' ? args.latitude : undefined;
+      let lng = typeof args.longitude === 'number' ? args.longitude : undefined;
+      let locName = typeof args.locationName === 'string' ? args.locationName : 'Goa Coastal Area';
+
+      if (lat === undefined || lng === undefined) {
+        if (typeof args.journeyId === 'string' && args.journeyId.trim()) {
+          const { snapshot } = requireAuthorizedJourney(args, ctx);
+          const firstItem = snapshot.items.find((i) => i.location?.coordinates);
+          if (firstItem?.location?.coordinates) {
+            lat = firstItem.location.coordinates.latitude;
+            lng = firstItem.location.coordinates.longitude;
+            locName = firstItem.location.name || snapshot.title;
+          }
+        }
+      }
+      if (lat === undefined || lng === undefined) {
+        lat = 15.2993;
+        lng = 74.124;
+      }
+
+      let obs;
+      try {
+        obs = await sharedFixtureProvider.fetchCurrentObservations({
+          coordinates: { latitude: lat, longitude: lng },
+          locationName: locName,
+        });
+      } catch {
+        obs = await sharedOpenMeteoProvider.fetchCurrentObservations({
+          coordinates: { latitude: lat, longitude: lng },
+          locationName: locName,
+        });
+      }
+
+      const factId = `FACT-WEATHER-${lat.toFixed(4)}-${lng.toFixed(4)}-${obs.observedAt}`;
+      const facts: GroundedFactReference[] = [
+        {
+          factId,
+          sourceType: 'EXTERNAL_WEATHER',
+          sourceEntityId: obs.id,
+          sourceTimestamp: obs.observedAt,
+          label: `${obs.locationName} Weather: ${obs.weatherCondition}, ${obs.temperatureC}°C, Wind ${obs.windSpeedKmH} km/h (Gusts ${obs.windGustKmH} km/h)`,
+          authoritativeValue: `${obs.temperatureC}C, ${obs.windSpeedKmH}kmh_wind`,
+        },
+      ];
+
+      return {
+        data: {
+          observation: obs,
+        },
+        summary: `Current weather at ${obs.locationName}: ${obs.temperatureC}°C (feels like ${obs.feelsLikeC}°C), ${obs.weatherCondition}, wind ${obs.windSpeedKmH} km/h, gusting ${obs.windGustKmH} km/h. Freshness: ${obs.provenance.freshness}.`,
+        facts,
+      };
+    },
+  },
+
+  get_weather_forecast: {
+    name: 'get_weather_forecast',
+    description:
+      'Retrieve normalized weather forecast timeline for coordinates or journey dates.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 8000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      let lat = typeof args.latitude === 'number' ? args.latitude : 15.2993;
+      let lng = typeof args.longitude === 'number' ? args.longitude : 74.124;
+      const hours = typeof args.hours === 'number' ? args.hours : 24;
+
+      if (args.journeyId && typeof args.journeyId === 'string') {
+        const { snapshot } = requireAuthorizedJourney(args, ctx);
+        const firstItem = snapshot.items.find((i) => i.location?.coordinates);
+        if (firstItem?.location?.coordinates) {
+          lat = firstItem.location.coordinates.latitude;
+          lng = firstItem.location.coordinates.longitude;
+        }
+      }
+
+      const forecast = await sharedOpenMeteoProvider.fetchForecast({
+        coordinates: { latitude: lat, longitude: lng },
+        lookaheadHours: hours,
+      });
+
+      const facts: GroundedFactReference[] = forecast.slice(0, 3).map((f) => ({
+        factId: `FACT-WEATHER-FC-${lat.toFixed(4)}-${lng.toFixed(4)}-${f.observedAt}`,
+        sourceType: 'EXTERNAL_WEATHER',
+        sourceEntityId: f.id,
+        sourceTimestamp: f.observedAt,
+        label: `Forecast ${f.observedAt}: ${f.weatherCondition}, ${f.temperatureC}°C, Wind ${f.windSpeedKmH} km/h`,
+        authoritativeValue: `${f.temperatureC}C, wind_${f.windSpeedKmH}`,
+      }));
+
+      return {
+        data: {
+          forecast,
+          count: forecast.length,
+        },
+        summary: `Retrieved ${forecast.length} forecast points for (${lat.toFixed(3)}, ${lng.toFixed(3)}). Condition range: ${forecast[0]?.weatherCondition || 'Normal'}.`,
+        facts,
+      };
+    },
+  },
+
+  get_active_external_alerts: {
+    name: 'get_active_external_alerts',
+    description:
+      'Retrieve active verified external advisories, meteorological alerts, or environmental warnings.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 8000,
+    auditRequired: false,
+    handler: async (args) => {
+      let activeEvents = sharedExternalEventImpactCoordinator.getActiveEvents();
+      if (activeEvents.length === 0) {
+        const lat = typeof args.latitude === 'number' ? args.latitude : 15.2993;
+        const lng = typeof args.longitude === 'number' ? args.longitude : 74.124;
+        activeEvents = await sharedFixtureProvider.fetchActiveAlerts({
+          coordinates: { latitude: lat, longitude: lng },
+        });
+      }
+
+      const facts: GroundedFactReference[] = activeEvents.map((ev) => ({
+        factId: `FACT-EVENT-${ev.id}`,
+        sourceType: 'EXTERNAL_EVENT',
+        sourceEntityId: ev.id,
+        sourceTimestamp: ev.updatedAt,
+        label: `External Alert: [${ev.severity}] ${ev.title}`,
+        authoritativeValue: `${ev.severity}:${ev.category}`,
+      }));
+
+      return {
+        data: {
+          alerts: activeEvents,
+          count: activeEvents.length,
+        },
+        summary: `Found ${activeEvents.length} active external alerts in operational scope.`,
+        facts,
+      };
+    },
+  },
+
+  get_journey_external_impacts: {
+    name: 'get_journey_external_impacts',
+    description:
+      'Retrieve verified external event impacts specifically evaluated on an authorized journey.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 4000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      const { journeyId } = requireAuthorizedJourney(args, ctx);
+      const impacts = sharedExternalEventImpactCoordinator.getImpactsForJourney(journeyId);
+      const proposal = sharedExternalEventImpactCoordinator.getActiveProposalForJourney(journeyId);
+
+      const facts: GroundedFactReference[] = impacts.map((imp) => ({
+        factId: `FACT-IMPACT-${imp.id}`,
+        sourceType: 'IMPACT_ANALYSIS',
+        sourceEntityId: imp.id,
+        sourceTimestamp: imp.evaluatedAt,
+        label: `Impact on ${imp.activityTitle}: ${imp.recommendedAction} (Severity: ${imp.severity})`,
+        authoritativeValue: imp.severity,
+      }));
+
+      return {
+        data: {
+          journeyId,
+          impacts,
+          impactsCount: impacts.length,
+          activeProposal: proposal || null,
+        },
+        summary: `Journey ${journeyId} has ${impacts.length} active external impact(s). Proposal pending: ${proposal ? proposal.proposalId : 'None'}.`,
+        facts,
+      };
+    },
+  },
+
+  get_event_details: {
+    name: 'get_event_details',
+    description:
+      'Retrieve detailed provenance, validity window, parameters, and affected zones for an external event.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 4000,
+    auditRequired: false,
+    handler: async (args) => {
+      const eventId = typeof args.eventId === 'string' ? args.eventId.trim() : '';
+      if (!eventId) {
+        throw new Error('MISSING_EVENT_ID: eventId argument is required.');
+      }
+
+      let ev = sharedExternalEventImpactCoordinator.getEventById(eventId);
+      if (!ev) {
+        const fixtureAlerts = await sharedFixtureProvider.fetchActiveAlerts({
+          coordinates: { latitude: 15.2993, longitude: 74.124 },
+        });
+        ev = fixtureAlerts.find((a) => a.id === eventId);
+      }
+
+      if (!ev) {
+        throw new Error(`EVENT_NOT_FOUND: External event "${eventId}" was not found.`);
+      }
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-EVENT-${ev.id}`,
+          sourceType: 'EXTERNAL_EVENT',
+          sourceEntityId: ev.id,
+          sourceTimestamp: ev.updatedAt,
+          label: `${ev.title} (${ev.severity}) - Valid ${ev.validFrom} to ${ev.validTo}`,
+          authoritativeValue: ev.severity,
+        },
+      ];
+
+      return {
+        data: {
+          event: ev,
+        },
+        summary: `Event ${ev.id}: ${ev.title}. Severity: ${ev.severity}. Valid until ${ev.validTo}. Provenance: ${ev.provenance.providerName} (${ev.provenance.freshness}).`,
+        facts,
+      };
+    },
+  },
+
+  get_provider_freshness: {
+    name: 'get_provider_freshness',
+    description:
+      'Retrieve health telemetry, sync status, latency, and freshness reports for integrated external providers.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 4000,
+    auditRequired: false,
+    handler: async (args) => {
+      const providerName = typeof args.providerName === 'string' ? args.providerName.toLowerCase() : 'all';
+      const openMeteoHealth = await sharedOpenMeteoProvider.healthCheck();
+      const fixtureHealth = await sharedFixtureProvider.healthCheck();
+
+      const reports = [openMeteoHealth, fixtureHealth];
+      const filtered = providerName === 'all'
+        ? reports
+        : reports.filter((r) => r.providerName.toLowerCase().includes(providerName));
+
+      const facts: GroundedFactReference[] = filtered.map((r) => ({
+        factId: `FACT-PROVIDER-${r.providerName}-${Date.now()}`,
+        sourceType: 'OPERATOR_QUEUE',
+        sourceEntityId: r.providerName,
+        sourceTimestamp: r.updatedAt,
+        label: `Provider ${r.providerName} health: ${r.status}, latency: ${r.latestLatencyMs}ms`,
+        authoritativeValue: r.status,
+      }));
+
+      return {
+        data: {
+          providers: filtered,
+        },
+        summary: `Provider telemetry reports checked. Overall status: ${filtered.map((f) => `${f.providerName}: ${f.status}`).join(', ')}.`,
+        facts,
+      };
+    },
+  },
+
+  explain_weather_impact: {
+    name: 'explain_weather_impact',
+    description:
+      'Generate a grounded, deterministic explanation of how an external weather event affects journey activities, what is preserved, and alternatives.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    timeoutMs: 4000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      const { journeyId, snapshot } = requireAuthorizedJourney(args, ctx);
+      const impacts = sharedExternalEventImpactCoordinator.getImpactsForJourney(journeyId);
+      const proposal = sharedExternalEventImpactCoordinator.getActiveProposalForJourney(journeyId);
+
+      const eventId = typeof args.eventId === 'string' ? args.eventId : impacts[0]?.eventId;
+      const relevantImpact = impacts.find((imp) => imp.eventId === eventId) || impacts[0];
+
+      if (!relevantImpact) {
+        return {
+          data: {
+            journeyId,
+            impacts: [],
+            explanation: 'No active weather impacts or disruptions detected for this journey.',
+          },
+          summary: `No external weather disruptions currently affect journey "${snapshot.title}".`,
+          facts: buildJourneyGroundedFacts({ snapshot }),
+        };
+      }
+
+      const affectedItem = snapshot.items.find((i) => i.id === relevantImpact.activityId);
+      const preservedItems = snapshot.items.filter((i) => i.id !== relevantImpact.activityId && i.status !== 'cancelled');
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-IMPACT-${relevantImpact.id}`,
+          sourceType: 'IMPACT_ANALYSIS',
+          sourceEntityId: relevantImpact.id,
+          sourceTimestamp: relevantImpact.evaluatedAt,
+          label: `Weather impact on ${relevantImpact.activityTitle}: ${relevantImpact.impactReason}`,
+          authoritativeValue: relevantImpact.severity,
+        },
+        {
+          factId: `FACT-EVENT-${relevantImpact.eventId}`,
+          sourceType: 'EXTERNAL_EVENT',
+          sourceEntityId: relevantImpact.eventId,
+          sourceTimestamp: relevantImpact.evaluatedAt,
+          label: `Causing event: ${relevantImpact.eventTitle}`,
+          authoritativeValue: relevantImpact.eventSeverity,
+        },
+      ];
+
+      return {
+        data: {
+          journeyId,
+          affectedActivityId: relevantImpact.activityId,
+          affectedActivityTitle: relevantImpact.activityTitle,
+          eventTitle: relevantImpact.eventTitle,
+          severity: relevantImpact.severity,
+          impactReason: relevantImpact.impactReason,
+          recommendedAction: relevantImpact.recommendedAction,
+          preservedActivities: preservedItems.map((p) => p.title),
+          proposal: proposal || null,
+        },
+        summary: `Due to ${relevantImpact.eventTitle} (${relevantImpact.eventSeverity}), "${relevantImpact.activityTitle}" is disrupted (${relevantImpact.recommendedAction}). ${preservedItems.length} activities remain unaffected and safe.`,
+        facts,
       };
     },
   },

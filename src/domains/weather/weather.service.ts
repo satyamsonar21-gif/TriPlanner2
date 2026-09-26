@@ -2,9 +2,34 @@ import type {
   DestinationWeatherReport,
   WeatherCondition,
 } from './weather.types';
+import { fetchWeatherApi } from 'openmeteo';
 
 function toFahrenheit(celsius: number): number {
   return Math.round((celsius * 9) / 5 + 32);
+}
+
+function mapWMOToCondition(code: number): WeatherCondition {
+  if (code === 0) return 'sunny';
+  if (code >= 1 && code <= 3) return 'partly_cloudy';
+  if (code >= 45 && code <= 48) return 'foggy';
+  if (code >= 51 && code <= 67) return 'rainy';
+  if (code >= 80 && code <= 82) return 'rainy';
+  if (code >= 95 && code <= 99) return 'thunderstorm';
+  if (code >= 71 && code <= 77) return 'snowy';
+  return 'sunny';
+}
+
+function mapWMOToText(code: number): string {
+  if (code === 0) return 'Clear sky';
+  if (code === 1) return 'Mainly clear';
+  if (code === 2) return 'Partly cloudy';
+  if (code === 3) return 'Overcast';
+  if (code >= 45 && code <= 48) return 'Fog';
+  if (code >= 51 && code <= 55) return 'Drizzle';
+  if (code >= 61 && code <= 65) return 'Rain';
+  if (code >= 80 && code <= 82) return 'Rain showers';
+  if (code >= 95) return 'Thunderstorm';
+  return 'Unknown';
 }
 
 const DESTINATION_WEATHER_FIXTURES: Record<string, DestinationWeatherReport> = {
@@ -963,25 +988,125 @@ export class WeatherService {
       return cached.report;
     }
 
-    // Simulate realistic network delay
-    await new Promise((resolve) => setTimeout(resolve, 320));
-
-    // Lookup destination or fallback to Goa
     const fixture =
       DESTINATION_WEATHER_FIXTURES[destinationId] ||
       DESTINATION_WEATHER_FIXTURES['dest_goa_01'];
 
-    // Add slight random fluctuation for dynamic realism
-    const minuteJitter = Math.floor(Math.random() * 2) - 1;
-    const report: DestinationWeatherReport = {
-      ...fixture,
-      currentTempC: fixture.currentTempC + (minuteJitter !== 0 ? minuteJitter : 0),
-      currentTempF: toFahrenheit(fixture.currentTempC + (minuteJitter !== 0 ? minuteJitter : 0)),
-      lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    };
+    try {
+      const params = {
+        latitude: fixture.coordinates.lat,
+        longitude: fixture.coordinates.lng,
+        daily: ["weather_code", "temperature_2m_max", "temperature_2m_min", "sunset", "sunrise", "precipitation_probability_max", "uv_index_max"],
+        hourly: ["temperature_2m", "weather_code", "precipitation_probability", "relative_humidity_2m", "wind_speed_10m"],
+        current: ["temperature_2m", "apparent_temperature", "weather_code", "relative_humidity_2m", "wind_speed_10m", "wind_direction_10m", "is_day"],
+        timezone: "auto",
+        past_days: 0,
+        forecast_days: 7,
+      };
+      const url = "https://api.open-meteo.com/v1/forecast";
+      const responses = await fetchWeatherApi(url, params);
+      
+      const response = responses[0];
+      const current = response.current()!;
+      const hourly = response.hourly()!;
+      const daily = response.daily()!;
+      const utcOffsetSeconds = response.utcOffsetSeconds();
 
-    this.cache.set(destinationId, { report, timestamp: now });
-    return report;
+      const currentTemp = Math.round(current.variables(0)!.value());
+      const feelsLike = Math.round(current.variables(1)!.value());
+      const weatherCode = current.variables(2)!.value();
+      const humidity = Math.round(current.variables(3)!.value());
+      const windSpeed = Math.round(current.variables(4)!.value());
+      
+      const condition = mapWMOToCondition(weatherCode);
+      const conditionText = mapWMOToText(weatherCode);
+
+      const hourlyTemps = hourly.variables(0)!.valuesArray()!;
+      const hourlyCodes = hourly.variables(1)!.valuesArray()!;
+      const hourlyPrecip = hourly.variables(2)!.valuesArray()!;
+      const hourlyHumidity = hourly.variables(3)!.valuesArray()!;
+      const hourlyWind = hourly.variables(4)!.valuesArray()!;
+
+      const parsedHourly = [];
+      const hourOffset = new Date().getHours();
+      for (let i = 0; i < 6; i++) {
+         const idx = hourOffset + (i * 3);
+         parsedHourly.push({
+           time: `${(hourOffset + i * 3) % 24}:00`.padStart(5, '0'),
+           tempC: Math.round(hourlyTemps[idx]),
+           tempF: toFahrenheit(Math.round(hourlyTemps[idx])),
+           condition: mapWMOToCondition(hourlyCodes[idx]),
+           conditionText: mapWMOToText(hourlyCodes[idx]),
+           precipitationProbability: Math.round(hourlyPrecip[idx]),
+           humidity: Math.round(hourlyHumidity[idx]),
+           windSpeedKmH: Math.round(hourlyWind[idx]),
+         });
+      }
+
+      const dailyCodes = daily.variables(0)!.valuesArray()!;
+      const dailyMax = daily.variables(1)!.valuesArray()!;
+      const dailyMin = daily.variables(2)!.valuesArray()!;
+      const dailyPrecip = daily.variables(5)!.valuesArray()!;
+      const dailyUv = daily.variables(6)!.valuesArray()!;
+      const sunset = daily.variables(3)!;
+      const sunrise = daily.variables(4)!;
+
+      const parsedDaily = [];
+      for (let i = 0; i < 5; i++) {
+         const srDate = new Date((Number(sunrise.valuesInt64(i)) + utcOffsetSeconds) * 1000);
+         const ssDate = new Date((Number(sunset.valuesInt64(i)) + utcOffsetSeconds) * 1000);
+         const dateObj = new Date();
+         dateObj.setDate(dateObj.getDate() + i);
+
+         parsedDaily.push({
+           date: dateObj.toISOString().split('T')[0],
+           dayName: i === 0 ? 'Today' : dateObj.toLocaleDateString('en-US', { weekday: 'short' }),
+           condition: mapWMOToCondition(dailyCodes[i]),
+           conditionText: mapWMOToText(dailyCodes[i]),
+           tempHighC: Math.round(dailyMax[i]),
+           tempLowC: Math.round(dailyMin[i]),
+           tempHighF: toFahrenheit(Math.round(dailyMax[i])),
+           tempLowF: toFahrenheit(Math.round(dailyMin[i])),
+           precipitationProbability: Math.round(dailyPrecip[i] || 0),
+           humidity: fixture.daily[i]?.humidity || 75,
+           windSpeedKmH: fixture.daily[i]?.windSpeedKmH || 15,
+           uvIndex: Math.round(dailyUv[i] || 8),
+           sunrise: srDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+           sunset: ssDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+           packingAdvisory: fixture.daily[i]?.packingAdvisory || 'Weather appropriate clothing',
+           activityRecommendation: fixture.daily[i]?.activityRecommendation || 'Adjust plans to weather',
+         });
+      }
+
+      const report: DestinationWeatherReport = {
+        ...fixture,
+        currentTempC: currentTemp,
+        currentTempF: toFahrenheit(currentTemp),
+        feelsLikeC: feelsLike,
+        feelsLikeF: toFahrenheit(feelsLike),
+        condition: condition,
+        conditionText: conditionText,
+        humidity: humidity,
+        windSpeedKmH: windSpeed,
+        hourly: parsedHourly,
+        daily: parsedDaily,
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      };
+
+      this.cache.set(destinationId, { report, timestamp: now });
+      return report;
+    } catch (error) {
+      console.warn("Failed to fetch from open-meteo, falling back to mock", error);
+      const minuteJitter = Math.floor(Math.random() * 2) - 1;
+      const report: DestinationWeatherReport = {
+        ...fixture,
+        currentTempC: fixture.currentTempC + (minuteJitter !== 0 ? minuteJitter : 0),
+        currentTempF: toFahrenheit(fixture.currentTempC + (minuteJitter !== 0 ? minuteJitter : 0)),
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      };
+      this.cache.set(destinationId, { report, timestamp: now });
+      return report;
+    }
   }
 
   /**
