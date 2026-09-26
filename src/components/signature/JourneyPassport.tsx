@@ -1,5 +1,9 @@
 import React from 'react';
-import type { TripJourney, TravelerProfile, JourneyStatus } from '@/types/database.types';
+import type {
+  TripJourney,
+  TravelerProfile,
+  JourneyStatus,
+} from '@/types/database.types';
 import { Badge } from '@/components/ui/badge';
 
 interface JourneyPassportProps {
@@ -12,7 +16,10 @@ interface JourneyPassportProps {
   className?: string;
 }
 
-const STATUS_VARIANTS: Record<JourneyStatus, 'default' | 'active' | 'disrupted' | 'confirmed' | 'brass'> = {
+const STATUS_VARIANTS: Record<
+  JourneyStatus,
+  'default' | 'active' | 'disrupted' | 'confirmed' | 'brass'
+> = {
   draft: 'default',
   planning: 'brass',
   booked: 'confirmed',
@@ -32,11 +39,15 @@ export const JourneyPassport: React.FC<JourneyPassportProps> = ({
   totalBookingsCount = 5,
   className = '',
 }) => {
+  const version = journey.version ?? 17;
+  const allocatedCost = journey.allocated_cost ?? journey.total_budget;
+
   return (
     <div
       className={`relative bg-parchment border-2 border-espresso/25 p-8 max-w-xl mx-auto shadow-md font-body ${className}`}
       style={{
-        backgroundImage: 'radial-gradient(var(--espresso) 0.3px, transparent 0.3px)',
+        backgroundImage:
+          'radial-gradient(var(--espresso) 0.3px, transparent 0.3px)',
         backgroundSize: '16px 16px',
         backgroundColor: '#F3E8DC',
       }}
@@ -46,6 +57,9 @@ export const JourneyPassport: React.FC<JourneyPassportProps> = ({
         <Badge variant={STATUS_VARIANTS[journey.status]}>
           {journey.status.toUpperCase()}
         </Badge>
+        <span className="font-mono text-[10px] text-terracotta font-bold uppercase tracking-widest border border-terracotta/30 bg-soft-ivory px-2 py-0.5">
+          VER: v{version}
+        </span>
         <span className="font-mono text-[10px] text-stone-gray uppercase tracking-widest border border-stone-gray/30 px-2 py-0.5">
           REF: {journey.passport_reference_code}
         </span>
@@ -58,7 +72,7 @@ export const JourneyPassport: React.FC<JourneyPassportProps> = ({
         </div>
         <div>
           <span className="font-mono text-[9px] uppercase tracking-widest text-stone-gray block">
-            OFFICIAL TRAVEL DOCUMENT • LIVING JOURNEY PASS
+            OFFICIAL TRAVEL DOCUMENT • LIVING JOURNEY PASS (v{version})
           </span>
           <h2 className="font-display text-2xl text-deep-slate tracking-tight">
             {journey.title}
@@ -97,10 +111,11 @@ export const JourneyPassport: React.FC<JourneyPassportProps> = ({
 
         <div>
           <span className="font-mono text-[10px] uppercase text-stone-gray block mb-0.5">
-            TOTAL JOURNEY BUDGET
+            ALLOCATED / TOTAL BUDGET
           </span>
           <p className="font-mono text-xs text-terracotta font-bold">
-            ${journey.total_budget.toLocaleString()} {journey.currency}
+            {allocatedCost.toLocaleString()} / {journey.total_budget.toLocaleString()}{' '}
+            {journey.currency}
           </p>
         </div>
       </div>
@@ -109,7 +124,9 @@ export const JourneyPassport: React.FC<JourneyPassportProps> = ({
       <div className="border-t border-espresso/20 pt-4 mt-2">
         <div className="flex items-center justify-between text-[11px] font-mono text-stone-gray mb-1.5">
           <span>JOURNEY EXECUTION PROGRESS</span>
-          <span className="text-espresso font-semibold">{progressPercentage}%</span>
+          <span className="text-espresso font-semibold">
+            {progressPercentage}%
+          </span>
         </div>
         <div className="w-full bg-espresso/10 h-1.5 relative overflow-hidden mb-3">
           <div
@@ -121,14 +138,14 @@ export const JourneyPassport: React.FC<JourneyPassportProps> = ({
         <div className="flex items-center justify-between text-[10px] font-mono text-stone-gray">
           <span>BOOKING STATUS:</span>
           <span className="text-espresso">
-            {confirmedBookingsCount} OF {totalBookingsCount} CONFIRMED
+            {confirmedBookingsCount} OF {totalBookingsCount} CONFIRMED • SNAPSHOT v{version}
           </span>
         </div>
       </div>
 
       {/* Bottom Passport Machine-Readable Zone Visual */}
       <div className="mt-6 pt-4 border-t border-dashed border-espresso/30 font-mono text-[9px] text-stone-gray tracking-widest break-all opacity-70">
-        P&lt;TRIP&lt;&lt;ROSTOVA&lt;&lt;ELENA&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+        P&lt;TRIP&lt;&lt;ROSTOVA&lt;&lt;ELENA&lt;&lt;V{version}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
         <br />
         {journey.passport_reference_code}3IST890722M2609300LIVINGENGINE01
       </div>

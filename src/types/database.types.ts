@@ -37,6 +37,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
+  display_name?: string;
   avatar_url?: string;
   role: UserRole;
   status?: AccountStatus;
@@ -104,7 +105,11 @@ export interface Destination {
   curated_highlights: string[];
   climate_summary: string;
   average_daily_budget: number;
-  coordinates: { lat: number; lng: number };
+  coordinates: { lat: number; lng: number }; // Legacy/convenience
+  geo_lat?: number;
+  geo_lng?: number;
+  geo_place_id?: string;
+  geo_provider?: string;
   created_at: string;
   styles?: string[];
   experiences?: string[];
@@ -131,7 +136,11 @@ export interface Activity {
   currency: string;
   image_url: string;
   location_name: string;
-  coordinates?: { lat: number; lng: number };
+  coordinates?: { lat: number; lng: number }; // Legacy
+  geo_lat?: number;
+  geo_lng?: number;
+  geo_place_id?: string;
+  geo_provider?: string;
   max_capacity?: number;
   created_at: string;
 }
@@ -144,6 +153,10 @@ export interface Accommodation {
   type: 'hotel' | 'resort' | 'villa' | 'boutique' | 'apartment';
   star_rating: number;
   address: string;
+  geo_lat?: number;
+  geo_lng?: number;
+  geo_place_id?: string;
+  geo_provider?: string;
   price_per_night: number;
   currency: string;
   hero_image: string;
@@ -169,6 +182,10 @@ export interface TripJourney {
   start_date: string;
   end_date: string;
   total_budget: number;
+  allocated_cost?: number;
+  hard_budget_constraint?: boolean;
+  soft_budget_tolerance_pct?: number;
+  version?: number;
   currency: string;
   status: JourneyStatus;
   current_location?: string;
@@ -221,9 +238,17 @@ export interface ItineraryItem {
   start_time: string; // ISO or HH:mm
   end_time: string;
   location_name: string;
+  geo_lat?: number;
+  geo_lng?: number;
+  geo_place_id?: string;
+  geo_provider?: string;
   price: number;
   currency: string;
   booking_id?: string;
+  booking_state?: 'NONE' | 'PENDING' | 'CONFIRMED' | 'NON_REFUNDABLE' | 'MODIFIABLE' | 'CANCELLED';
+  is_locked?: boolean;
+  party_size?: number;
+  category_tags?: string[];
   status: 'confirmed' | 'pending' | 'disrupted' | 'modifying' | 'cancelled';
   disruption_flag?: boolean;
 }

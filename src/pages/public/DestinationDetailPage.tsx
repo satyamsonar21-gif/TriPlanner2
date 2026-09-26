@@ -8,7 +8,8 @@ import {
   SunMedium,
   CheckCircle2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { MapView } from '@/components/geo';
 import { DestinationService } from '@/domains/destinations/destination.service';
 import type { Destination } from '@/types/database.types';
 
@@ -42,10 +43,15 @@ export const DestinationDetailPage: React.FC = () => {
         <p className="text-xs text-stone-gray">
           The requested destination catalog entry does not exist or has been relocated.
         </p>
-        <Link to="/explore">
-          <Button variant="outline" size="sm" className="font-mono text-xs uppercase">
-            Return to Destinations
-          </Button>
+        <Link
+          to="/explore"
+          className={buttonVariants({
+            variant: 'outline',
+            size: 'sm',
+            className: 'font-mono text-xs uppercase',
+          })}
+        >
+          Return to Destinations
         </Link>
       </div>
     );
@@ -99,15 +105,16 @@ export const DestinationDetailPage: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-4">
-            <Link to={`/plan?destination=${destination.slug}`}>
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-terracotta hover:bg-terracotta-hover text-soft-ivory font-mono text-xs uppercase tracking-widest px-7 py-3.5 shadow-sm gap-2"
-              >
-                <span>Customize This Journey</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+            <Link
+              to={`/plan?destination=${destination.slug}`}
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'lg',
+                className: 'bg-terracotta hover:bg-terracotta-hover text-soft-ivory font-mono text-xs uppercase tracking-widest px-7 py-3.5 shadow-sm gap-2',
+              })}
+            >
+              <span>Customize This Journey</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <div className="font-mono text-xs text-soft-ivory/90 bg-black/40 backdrop-blur-xs border border-white/20 px-4 py-3">
               Starting from{' '}
@@ -257,18 +264,44 @@ export const DestinationDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <Link to={`/plan?destination=${destination.slug}`} className="block">
-                <Button
-                  variant="primary"
-                  className="w-full justify-center bg-terracotta hover:bg-terracotta-hover text-soft-ivory font-mono text-xs uppercase tracking-wider py-3.5 shadow-sm"
-                >
-                  Personalize This Trip
-                </Button>
+              <Link
+                to={`/plan?destination=${destination.slug}`}
+                className={buttonVariants({
+                  variant: 'primary',
+                  className: 'w-full justify-center bg-terracotta hover:bg-terracotta-hover text-soft-ivory font-mono text-xs uppercase tracking-wider py-3.5 shadow-sm',
+                })}
+              >
+                Personalize This Trip
               </Link>
 
               <p className="text-[11px] text-stone-gray text-center font-body">
                 Customize your travel style, pace, stays, and budget flexibility in seconds.
               </p>
+            </div>
+
+            {/* Destination Spatial Context Map */}
+            <div className="bg-soft-ivory border border-espresso/25 p-4 space-y-3">
+              <div className="flex items-center justify-between font-mono text-[10px] uppercase text-stone-gray">
+                <span>SPATIAL REGION & STOPS</span>
+                <span className="text-terracotta font-semibold">
+                  {destination.region}
+                </span>
+              </div>
+              <MapView
+                center={destination.coordinates}
+                zoom={11}
+                markers={DestinationService.getNearbyExperiences(destination).map(
+                  (loc, idx) => ({
+                    id: loc.id,
+                    position: loc.coordinate,
+                    title: loc.name,
+                    sequenceNumber: idx + 1,
+                  })
+                )}
+                showRoutePolyline={true}
+                ariaLabel={`Spatial map of ${destination.name} and nearby experiences`}
+                className="w-full h-60 rounded-lg"
+              />
             </div>
           </div>
         </div>

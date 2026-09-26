@@ -148,6 +148,56 @@ export const OperatorDashboardPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Phase 03: Operator Spatial & Transfer Buffer Monitor */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Journey Spatial & Transfer Buffer Monitor</CardTitle>
+          <CardDescription>
+            Deterministic route feasibility and transfer buffer telemetry across live itineraries
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 bg-parchment/50 border border-espresso/15 space-y-1.5">
+            <div className="flex items-center justify-between font-mono text-[10px]">
+              <span className="text-stone-gray">JRN-GOA-01 • NORTH GOA</span>
+              <Badge variant="disrupted">SWELL RISK</Badge>
+            </div>
+            <p className="font-semibold text-deep-slate">
+              Candolim → Fort Aguada → Baga Reef → Panjim
+            </p>
+            <p className="text-stone-gray font-mono text-[11px]">
+              4 Legs • 24.6 km • 15m Safety Buffers Verified • Candidate: Mandovi Kayaking (Feasible Fit)
+            </p>
+          </div>
+
+          <div className="p-4 bg-parchment/50 border border-espresso/15 space-y-1.5">
+            <div className="flex items-center justify-between font-mono text-[10px]">
+              <span className="text-stone-gray">IST-890722 • ISTANBUL</span>
+              <Badge variant="disrupted">BUFFER DEFICIT -25M</Badge>
+            </div>
+            <p className="font-semibold text-deep-slate">
+              IST Airport → Pera Hotel → Hagia Sophia
+            </p>
+            <p className="text-stone-gray font-mono text-[11px]">
+              Flight TK1982 delay compresses transfer window below 15m minimum buffer.
+            </p>
+          </div>
+
+          <div className="p-4 bg-parchment/50 border border-espresso/15 space-y-1.5">
+            <div className="flex items-center justify-between font-mono text-[10px]">
+              <span className="text-stone-gray">KSH-260520 • KASHMIR</span>
+              <Badge variant="confirmed">FEASIBLE</Badge>
+            </div>
+            <p className="font-semibold text-deep-slate">
+              Dal Lake Houseboat → Gulmarg Gondola → Pahalgam
+            </p>
+            <p className="text-stone-gray font-mono text-[11px]">
+              All mountain transfers clear 25m safety buffer margin.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

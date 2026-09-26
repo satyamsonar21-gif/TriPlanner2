@@ -10,12 +10,23 @@ import {
   Layers,
   ChevronRight,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { HeroJourneyCard } from '@/components/signature/HeroJourneyCard';
 import { JourneyThread, type ThreadStep } from '@/components/signature/JourneyThread';
 import { DestinationCard } from '@/components/public/DestinationCard';
 import { LivingEngineDemo } from '@/components/public/LivingEngineDemo';
 import { OperatorPreviewCard } from '@/components/public/OperatorPreviewCard';
+import { HeroImageCarousel } from '@/components/public/HeroImageCarousel';
+import { DestinationStrip } from '@/components/public/DestinationStrip';
+import { DestinationShowcase } from '@/components/public/DestinationShowcase';
+import {
+  CompassRose,
+  FloatingParticles,
+  TravelStamps,
+  DottedFlightPath,
+  PaperAirplane,
+  ScrollProgressCompass,
+} from '@/components/public/TravelDecorations';
 import { DestinationService } from '@/domains/destinations/destination.service';
 import type { Destination } from '@/types/database.types';
 
@@ -98,13 +109,20 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="bg-background text-foreground font-body overflow-hidden">
+      {/* Scroll-tracking compass in bottom-right corner */}
+      <ScrollProgressCompass />
+
       {/* ============================================================ */}
-      {/* 1. HERO SECTION (FAITHFUL TO REFERENCE COMPOSITION)          */}
+      {/* 1. HERO SECTION (WITH ANIMATED CAROUSEL + DECORATIONS)       */}
       {/* ============================================================ */}
       <section
         className="relative pt-6 pb-20 md:py-24 px-6 lg:px-8 border-b border-espresso/15 bg-gradient-to-b from-[#F3E8DC]/40 via-background to-background"
         aria-label="Hero Introduction"
       >
+        {/* Ambient decorations — compass rose & particles */}
+        <CompassRose className="absolute -top-6 -right-8 lg:right-12 opacity-60" size={140} />
+        <FloatingParticles count={8} className="z-0" />
+        <TravelStamps />
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* LEFT COLUMN: Editorial Typography & CTAs */}
@@ -132,25 +150,27 @@ export const HomePage: React.FC = () => {
               {/* Actions & Microcopy */}
               <div className="space-y-4 pt-2">
                 <div className="flex flex-wrap items-center gap-4">
-                  <Link to="/plan">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="bg-terracotta hover:bg-terracotta-hover text-soft-ivory text-xs uppercase tracking-widest font-mono font-medium px-7 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 gap-2"
-                    >
-                      <span>Build My Journey</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
+                  <Link
+                    to="/plan"
+                    className={buttonVariants({
+                      variant: 'primary',
+                      size: 'lg',
+                      className: 'bg-terracotta hover:bg-terracotta-hover text-soft-ivory text-xs uppercase tracking-widest font-mono font-medium px-7 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 gap-2',
+                    })}
+                  >
+                    <span>Build My Journey</span>
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
 
-                  <Link to="/explore">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="border-espresso/30 text-espresso hover:bg-parchment/80 text-xs uppercase tracking-widest font-mono font-medium px-6 py-4 transition-colors"
-                    >
-                      Explore Destinations
-                    </Button>
+                  <Link
+                    to="/explore"
+                    className={buttonVariants({
+                      variant: 'outline',
+                      size: 'lg',
+                      className: 'border-espresso/30 text-espresso hover:bg-parchment/80 text-xs uppercase tracking-widest font-mono font-medium px-6 py-4 transition-colors',
+                    })}
+                  >
+                    Explore Destinations
                   </Link>
                 </div>
 
@@ -164,44 +184,8 @@ export const HomePage: React.FC = () => {
             <div className="lg:col-span-6 relative mt-4 lg:mt-0">
               {/* Background Architectural/Destination Visual Container */}
               <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Main Hero Photographic Composition */}
-                <div className="relative border-2 border-espresso/30 bg-parchment shadow-xl overflow-hidden aspect-[4/3] sm:aspect-[16/11]">
-                  <img
-                    src="/hero_editorial_travel.jpg"
-                    alt="Breathtaking architectural view of historic domes and waterside journey atmosphere"
-                    className="w-full h-full object-cover object-center filter contrast-[1.02] brightness-[0.98]"
-                  />
-                  {/* Subtle Grain / Warm Paper Overlay */}
-                  <div
-                    className="absolute inset-0 pointer-events-none opacity-20"
-                    style={{
-                      backgroundImage: 'radial-gradient(#33231E 0.5px, transparent 0.5px)',
-                      backgroundSize: '8px 8px',
-                    }}
-                  />
-                  {/* Subtle Gradient Vignette */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-deep-slate/50 via-transparent to-transparent pointer-events-none" />
-
-                  {/* Stamp / Travel Annotation Badge */}
-                  <div className="absolute top-4 right-4 bg-soft-ivory/95 border border-espresso/30 px-3 py-1.5 shadow-sm text-right">
-                    <span className="font-mono text-[8px] uppercase tracking-widest text-stone-gray block">
-                      ARCHIVE REF
-                    </span>
-                    <span className="font-mono text-[10px] font-semibold text-deep-slate">
-                      TUR-2026-IST-LIVING
-                    </span>
-                  </div>
-
-                  {/* Destination Tag */}
-                  <div className="absolute bottom-4 left-4 text-soft-ivory">
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-antique-brass block">
-                      FEATURED DESTINATION
-                    </span>
-                    <span className="font-display text-xl sm:text-2xl font-medium tracking-tight">
-                      Istanbul · The Bosphorus
-                    </span>
-                  </div>
-                </div>
+                {/* ROTATING HERO IMAGE CAROUSEL — Real destination photos with Ken Burns + crossfade */}
+                <HeroImageCarousel />
 
                 {/* Overlaid Physical "Journey Card / Journey Passport" */}
                 <div className="mt-6 sm:mt-0 sm:absolute sm:-bottom-10 sm:-left-8 sm:max-w-sm md:max-w-md w-full z-20 transition-transform duration-300 hover:scale-[1.01]">
@@ -221,10 +205,10 @@ export const HomePage: React.FC = () => {
           <div className="mt-16 sm:mt-24 pt-8 border-t border-espresso/15 grid grid-cols-2 md:grid-cols-4 gap-6 text-center sm:text-left">
             <div className="space-y-1">
               <span className="font-display text-3xl sm:text-4xl text-deep-slate font-medium block">
-                99.4%
+                DAG
               </span>
               <span className="font-mono text-[10px] uppercase tracking-wider text-stone-gray block">
-                Deterministic Schedule Integrity
+                Graph-Based Dependency Modeling
               </span>
             </div>
 
@@ -233,30 +217,40 @@ export const HomePage: React.FC = () => {
                 8+
               </span>
               <span className="font-mono text-[10px] uppercase tracking-wider text-stone-gray block">
-                Handcrafted Demo Destinations
+                Curated Demo Destinations
               </span>
             </div>
 
             <div className="space-y-1">
               <span className="font-display text-3xl sm:text-4xl text-deep-slate font-medium block">
-                &lt; 3s
+                Real-Time
               </span>
               <span className="font-mono text-[10px] uppercase tracking-wider text-stone-gray block">
-                Real-Time Impact & Proposal Generation
+                Automated Disruption Analysis
               </span>
             </div>
 
             <div className="space-y-1">
               <span className="font-display text-3xl sm:text-4xl text-deep-slate font-medium block">
-                0
+                100%
               </span>
               <span className="font-mono text-[10px] uppercase tracking-wider text-stone-gray block">
-                Downstream Conflict Guarantee
+                Deterministic Conflict Detection
               </span>
             </div>
           </div>
         </div>
+
+        {/* Dotted flight path decoration between hero and content */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 overflow-hidden pointer-events-none">
+          <DottedFlightPath className="w-full h-full" />
+        </div>
       </section>
+
+      {/* ============================================================ */}
+      {/* 1B. DESTINATION IMAGE STRIP — Infinite scrolling marquee     */}
+      {/* ============================================================ */}
+      <DestinationStrip />
 
       {/* ============================================================ */}
       {/* 2. SECTION: HOW PERSONALIZED PLANNING WORKS                  */}
@@ -403,19 +397,25 @@ export const HomePage: React.FC = () => {
                 Explore all 8 curated destinations or configure your own itinerary from scratch.
               </p>
             </div>
-            <Link to="/explore">
-              <Button
-                variant="outline"
-                size="md"
-                className="border-espresso text-espresso hover:bg-espresso hover:text-soft-ivory font-mono text-xs uppercase tracking-wider gap-2 shrink-0"
-              >
-                <span>View All Destinations</span>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+            <Link
+              to="/explore"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'md',
+                className: 'border-espresso text-espresso hover:bg-espresso hover:text-soft-ivory font-mono text-xs uppercase tracking-wider gap-2 shrink-0',
+              })}
+            >
+              <span>View All Destinations</span>
+              <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
+
+      {/* ============================================================ */}
+      {/* 3B. DESTINATION SHOWCASE — Immersive parallax gallery        */}
+      {/* ============================================================ */}
+      <DestinationShowcase />
 
       {/* ============================================================ */}
       {/* 4. SECTION: THE LIVING JOURNEY ENGINE (CORE DEMONSTRATION)   */}
@@ -605,7 +605,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 8. SECTION: CLOSING FINAL CTA                                */}
+      {/* 8. SECTION: CLOSING FINAL CTA (with floating decorations)    */}
       {/* ============================================================ */}
       <section
         className="py-24 px-6 lg:px-8 bg-parchment text-espresso text-center relative overflow-hidden"
@@ -619,6 +619,10 @@ export const HomePage: React.FC = () => {
             backgroundSize: '20px 20px',
           }}
         />
+        {/* Floating compass in CTA section */}
+        <CompassRose className="absolute -bottom-12 -left-12 opacity-30" size={160} />
+        <PaperAirplane className="absolute top-8 left-0" />
+        <FloatingParticles count={6} className="z-0" />
 
         <div className="max-w-3xl mx-auto space-y-8 relative z-10">
           <div className="w-12 h-12 border border-espresso mx-auto bg-soft-ivory flex items-center justify-center font-display font-bold text-lg text-terracotta shadow-xs">
@@ -634,25 +638,27 @@ export const HomePage: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link to="/plan">
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-terracotta hover:bg-terracotta-hover text-soft-ivory text-xs uppercase tracking-widest font-mono font-medium px-8 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 gap-2"
-              >
-                <span>Build My Journey</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+            <Link
+              to="/plan"
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'lg',
+                className: 'bg-terracotta hover:bg-terracotta-hover text-soft-ivory text-xs uppercase tracking-widest font-mono font-medium px-8 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 gap-2',
+              })}
+            >
+              <span>Build My Journey</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
 
-            <Link to="/explore">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-espresso/40 text-espresso hover:bg-soft-ivory text-xs uppercase tracking-widest font-mono font-medium px-7 py-4"
-              >
-                Explore Destinations
-              </Button>
+            <Link
+              to="/explore"
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'lg',
+                className: 'border-espresso/40 text-espresso hover:bg-soft-ivory text-xs uppercase tracking-widest font-mono font-medium px-7 py-4',
+              })}
+            >
+              Explore Destinations
             </Link>
           </div>
 

@@ -339,13 +339,106 @@ export const MOCK_DESTINATIONS: Destination[] = [
   },
 ];
 
+import {
+  type GeoLocation,
+  normalizeGeoLocation,
+  calculateHaversineDistanceMeters,
+  formatDistance,
+  DEMO_LOCATION_FIXTURES,
+} from '@/domains/geo';
+
 export class DestinationService {
   public static async getAll(): Promise<Destination[]> {
-    return MOCK_DESTINATIONS;
+    return MOCK_DESTINATIONS.map((dest) => ({
+      ...dest,
+      geo_lat: dest.geo_lat ?? dest.coordinates.lat,
+      geo_lng: dest.geo_lng ?? dest.coordinates.lng,
+      geo_place_id: dest.geo_place_id ?? `demo_place_${dest.slug}`,
+      geo_provider: dest.geo_provider ?? 'mock',
+    }));
   }
 
   public static async getBySlug(slug: string): Promise<Destination | null> {
-    return MOCK_DESTINATIONS.find((d) => d.slug === slug || d.id === slug) || null;
+    const all = await this.getAll();
+    return all.find((d) => d.slug === slug || d.id === slug) || null;
+  }
+
+  /**
+   * Resolves a Destination entity into a canonical normalized `GeoLocation`.
+   */
+  public static getCanonicalLocation(dest: Destination): GeoLocation {
+    return normalizeGeoLocation({
+      id: dest.id,
+      name: dest.name,
+      latitude: dest.geo_lat ?? dest.coordinates.lat,
+      longitude: dest.geo_lng ?? dest.coordinates.lng,
+      formattedAddress: `${dest.name}, ${dest.region}, ${dest.country}`,
+      city: dest.name,
+      region: dest.region,
+      country: dest.country,
+      countryCode: dest.country === 'India' ? 'IN' : dest.country === 'Turkey' ? 'TR' : 'ID',
+      provider: (dest.geo_provider as 'google' | 'mock') || 'mock',
+      providerPlaceId: dest.geo_place_id || `demo_place_${dest.slug}`,
+      locationType: 'destination',
+      isDemoFixture: true,
+    });
+  }
+
+  /**
+   * Returns nearby curated stop locations within 80 km of the destination center.
+   */
+  public static getNearbyExperiences(dest: Destination): GeoLocation[] {
+    const center = this.getCanonicalLocation(dest);
+    const matches = DEMO_LOCATION_FIXTURES.filter((loc) => {
+      if (loc.id === dest.id || loc.locationType === 'destination') return false;
+      const dist = calculateHaversineDistanceMeters(center, loc);
+      return dist <= 80_000;
+    });
+
+    if (matches.length > 0) {
+      return matches;
+    }
+
+    // Deterministic nearby stops for catalog destinations without individual stop fixtures
+    return dest.curated_highlights.map((highlight, idx) =>
+      normalizeGeoLocation({
+        id: `${dest.id}_stop_${idx + 1}`,
+        name: highlight,
+        latitude: Number((center.latitude + (idx + 1) * 0.018).toFixed(6)),
+        longitude: Number((center.longitude + (idx % 2 === 0 ? 0.021 : -0.016)).toFixed(6)),
+        formattedAddress: `${highlight}, ${dest.region}, ${dest.country}`,
+        city: dest.name,
+        region: dest.region,
+        country: dest.country,
+        provider: 'mock',
+        providerPlaceId: `demo_${dest.slug}_highlight_${idx + 1}`,
+        locationType: 'attraction',
+        isDemoFixture: true,
+      })
+    );
+  }
+
+  /**
+   * Calculates great-circle distance between two destinations.
+   */
+  public static async getDistanceBetween(
+    slugA: string,
+    slugB: string
+  ): Promise<{ distanceMeters: number; formattedDistance: string } | null> {
+    const [destA, destB] = await Promise.all([
+      this.getBySlug(slugA),
+      this.getBySlug(slugB),
+    ]);
+    if (!destA || !destB) return null;
+
+    const locA = this.getCanonicalLocation(destA);
+    const locB = this.getCanonicalLocation(destB);
+    const distanceMeters = calculateHaversineDistanceMeters(locA, locB);
+
+    return {
+      distanceMeters,
+      formattedDistance: formatDistance(distanceMeters),
+    };
   }
 
   public static async filter(options: {
@@ -353,7 +446,7 @@ export class DestinationService {
     style?: string;
     maxBudget?: number;
   }): Promise<Destination[]> {
-    let results = MOCK_DESTINATIONS;
+    let results = await this.getAll();
 
     if (options.query && options.query.trim() !== '') {
       const q = options.query.toLowerCase().trim();
@@ -379,3 +472,4 @@ export class DestinationService {
     return results;
   }
 }
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth/AuthContext';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Menu, X, ArrowUpRight, User as UserIcon, LayoutDashboard, LogOut } from 'lucide-react';
 
 export const PublicNavbar: React.FC = () => {
@@ -114,15 +114,12 @@ export const PublicNavbar: React.FC = () => {
           <div className="flex items-center gap-3 sm:gap-4">
             {user ? (
               <div className="flex items-center gap-3">
-                <Link to={dashboardUrl}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider border-[#33231E]/20 text-[#1C1410] hover:bg-[#F3E8DC] transition-colors"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 text-terracotta" />
-                    <span>My Dashboard</span>
-                  </Button>
+                <Link
+                  to={dashboardUrl}
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider border border-[#33231E]/20 text-[#1C1410] hover:bg-[#F3E8DC] transition-colors h-8 px-3 rounded-none font-semibold"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-terracotta" />
+                  <span>My Dashboard</span>
                 </Link>
                 <div className="hidden lg:flex items-center gap-2 text-xs font-mono border border-espresso/20 px-3 py-1 bg-parchment/60 rounded-md">
                   <UserIcon className="w-3.5 h-3.5 text-terracotta" />
@@ -155,15 +152,16 @@ export const PublicNavbar: React.FC = () => {
             )}
 
             {/* Primary Action Button */}
-            <Link to="/plan">
-              <Button
-                variant="primary"
-                size="md"
-                className="hidden sm:inline-flex items-center gap-2 bg-terracotta hover:bg-terracotta-hover text-soft-ivory text-xs uppercase tracking-wider font-mono font-medium px-4 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 rounded-lg"
-              >
-                <span>Build My Journey</span>
-                <ArrowUpRight className="w-4 h-4 opacity-90" />
-              </Button>
+            <Link
+              to="/plan"
+              className={buttonVariants({
+                variant: 'primary',
+                size: 'md',
+                className: 'hidden sm:inline-flex items-center gap-2 bg-terracotta hover:bg-terracotta-hover text-soft-ivory text-xs uppercase tracking-wider font-mono font-medium px-4 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 rounded-lg',
+              })}
+            >
+              <span>Build My Journey</span>
+              <ArrowUpRight className="w-4 h-4 opacity-90" />
             </Link>
 
             {/* Compact Mobile Menu Button */}
@@ -248,10 +246,15 @@ export const PublicNavbar: React.FC = () => {
             </div>
 
             <div className="pt-6 border-t border-espresso/15 space-y-3">
-              <Link to="/plan" className="w-full block" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="primary" className="w-full justify-center text-xs uppercase tracking-wider font-mono py-3">
-                  Build My Journey
-                </Button>
+              <Link
+                to="/plan"
+                onClick={() => setMobileMenuOpen(false)}
+                className={buttonVariants({
+                  variant: 'primary',
+                  className: 'w-full justify-center text-xs uppercase tracking-wider font-mono py-3',
+                })}
+              >
+                Build My Journey
               </Link>
 
               {user ? (

@@ -11,10 +11,22 @@ import {
   MOCK_PAYMENT_TRANSACTIONS,
   type PaymentTransaction,
 } from '@/domains/traveler/traveler.data';
+import { useAuth } from '@/core/auth/AuthContext';
 
 export const PaymentsPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'transactions' | 'upcoming' | 'invoices' | 'refunds'>('transactions');
   const [transactions] = useState<PaymentTransaction[]>(MOCK_PAYMENT_TRANSACTIONS);
+  const [actionToast, setActionToast] = useState<string | null>(null);
+  const [isAddCardOpen, setIsAddCardOpen] = useState(false);
+  const [isManageMethodsOpen, setIsManageMethodsOpen] = useState(false);
+  const [newCardNumber, setNewCardNumber] = useState('');
+  const [newCardName, setNewCardName] = useState('');
+
+  const triggerToast = (msg: string) => {
+    setActionToast(msg);
+    setTimeout(() => setActionToast(null), 3500);
+  };
 
   return (
     <div className="space-y-8 font-body pb-12">
@@ -31,13 +43,21 @@ export const PaymentsPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => alert('Download consolidated financial tax statement for FY 2025-26...')}
-          className="px-4 py-2 rounded-lg bg-transparent border border-[#33231E]/20 text-[#33231E] hover:bg-[#33231E]/5 text-xs font-medium transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+          onClick={() => triggerToast('Official consolidated financial tax statement for FY 2025-26 compiled & downloaded.')}
+          className="px-4 py-2 rounded-lg bg-transparent border border-[#33231E]/20 text-[#33231E] hover:bg-[#33231E]/5 text-xs font-medium transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Tax Statement</span>
         </button>
       </div>
+
+      {/* Floating Action Feedback Toast */}
+      {actionToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#33231E] text-[#FFF9F3] px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-mono animate-in slide-in-from-bottom-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{actionToast}</span>
+        </div>
+      )}
 
       {/* Top Summary Cards (4 Cards) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -129,8 +149,8 @@ export const PaymentsPage: React.FC = () => {
                       {tx.receiptUrl && (
                         <button
                           type="button"
-                          onClick={() => alert(`Receipt downloaded for ${tx.description}`)}
-                          className="text-[#8A7B75] hover:text-terracotta p-1"
+                          onClick={() => triggerToast(`Receipt downloaded for ${tx.description}`)}
+                          className="text-[#8A7B75] hover:text-terracotta p-1 cursor-pointer"
                           title="Download Receipt"
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -152,7 +172,7 @@ export const PaymentsPage: React.FC = () => {
               <div className="p-5 rounded-2xl bg-[#FFF9F3] border border-[#33231E]/15 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[10px] font-mono text-[#8A7B75] uppercase block">DUE 10 MAY 2025</span>
+                    <span className="text-[10px] font-mono text-[#8A7B75] uppercase block">DUE 10 MAY 2026</span>
                     <h5 className="font-display text-sm font-semibold text-[#1C1410] mt-0.5">
                       IndiGo Flight GOI → DEL Final Settlement
                     </h5>
@@ -178,9 +198,9 @@ export const PaymentsPage: React.FC = () => {
               </span>
               <div className="bg-[#FFF9F3] border border-[#33231E]/15 rounded-2xl divide-y divide-[#33231E]/10 overflow-hidden">
                 {[
-                  { id: 'INV-2025-091', item: 'Seashell Beach Resort Stay', amount: 24560, date: '20 Apr 2025' },
-                  { id: 'INV-2025-092', item: 'IndiGo Airlines Flight DEL-GOI', amount: 14200, date: '22 Apr 2025' },
-                  { id: 'INV-2025-093', item: 'The Hosteller Heritage Quinta', amount: 11400, date: '25 Apr 2025' },
+                  { id: 'INV-2026-091', item: 'Seashell Beach Resort Stay', amount: 24560, date: '20 Apr 2026' },
+                  { id: 'INV-2026-092', item: 'IndiGo Airlines Flight DEL-GOI', amount: 14200, date: '22 Apr 2026' },
+                  { id: 'INV-2026-093', item: 'The Hosteller Heritage Quinta', amount: 11400, date: '25 Apr 2026' },
                 ].map((inv) => (
                   <div key={inv.id} className="p-4 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">
@@ -193,8 +213,9 @@ export const PaymentsPage: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <span className="font-mono font-bold text-[#1C1410]">₹{inv.amount.toLocaleString()}</span>
                       <button
-                        onClick={() => alert(`Downloading Invoice ${inv.id}...`)}
-                        className="px-2.5 py-1 rounded border border-[#33231E]/20 text-[11px] hover:bg-[#33231E]/5"
+                        type="button"
+                        onClick={() => triggerToast(`Downloading Official Tax Invoice ${inv.id}...`)}
+                        className="px-2.5 py-1 rounded border border-[#33231E]/20 text-[11px] hover:bg-[#33231E]/5 cursor-pointer"
                       >
                         PDF
                       </button>
@@ -227,8 +248,8 @@ export const PaymentsPage: React.FC = () => {
               </h3>
               <button
                 type="button"
-                onClick={() => alert('Add new payment card modal...')}
-                className="text-xs font-mono text-terracotta hover:underline font-semibold"
+                onClick={() => setIsAddCardOpen(true)}
+                className="text-xs font-mono text-terracotta hover:underline font-semibold cursor-pointer"
               >
                 + Add Card
               </button>
@@ -255,7 +276,7 @@ export const PaymentsPage: React.FC = () => {
                   <Wallet className="w-4 h-4 text-stone-gray" />
                   <div>
                     <span className="text-xs font-semibold text-[#1C1410] block">Google Pay / UPI</span>
-                    <span className="text-[10px] font-mono text-[#8A7B75]">ananya@okaxis</span>
+                    <span className="text-[10px] font-mono text-[#8A7B75]">{user?.display_name ? user.display_name.toLowerCase() : 'traveler'}@okaxis</span>
                   </div>
                 </div>
                 <span className="text-[9px] font-mono uppercase text-[#8A7B75]">LINKED</span>
@@ -264,8 +285,9 @@ export const PaymentsPage: React.FC = () => {
 
             <div className="pt-2">
               <button
-                onClick={() => alert('Payment method security settings...')}
-                className="w-full py-2 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors"
+                type="button"
+                onClick={() => setIsManageMethodsOpen(true)}
+                className="w-full py-2 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors cursor-pointer"
               >
                 Manage Payment Methods
               </button>
@@ -284,6 +306,170 @@ export const PaymentsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Card Modal */}
+      {isAddCardOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsAddCardOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-[#FFF9F3] border border-[#33231E]/20 rounded-2xl p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-[#33231E]/10 pb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-terracotta" />
+                <h4 className="font-display text-base font-semibold text-[#1C1410]">Add Payment Method</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddCardOpen(false)}
+                className="text-[#8A7B75] hover:text-[#1C1410] text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setIsAddCardOpen(false);
+                triggerToast(`Payment card ${newCardName || 'ending in ' + newCardNumber.slice(-4)} added successfully.`);
+                setNewCardNumber('');
+                setNewCardName('');
+              }}
+              className="space-y-3 text-xs"
+            >
+              <div>
+                <label className="font-mono text-[10px] uppercase font-bold text-[#8A7B75] block mb-1">
+                  Cardholder Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Satyam Sonar"
+                  value={newCardName}
+                  onChange={(e) => setNewCardName(e.target.value)}
+                  required
+                  className="w-full p-2.5 rounded-lg bg-[#F8F3ED] border border-[#33231E]/15 text-[#1C1410] focus:outline-none focus:border-terracotta"
+                />
+              </div>
+
+              <div>
+                <label className="font-mono text-[10px] uppercase font-bold text-[#8A7B75] block mb-1">
+                  Card Number (Tokenized)
+                </label>
+                <input
+                  type="text"
+                  placeholder="•••• •••• •••• ••••"
+                  maxLength={19}
+                  value={newCardNumber}
+                  onChange={(e) => setNewCardNumber(e.target.value)}
+                  required
+                  className="w-full p-2.5 rounded-lg bg-[#F8F3ED] border border-[#33231E]/15 font-mono text-[#1C1410] focus:outline-none focus:border-terracotta"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-mono text-[10px] uppercase font-bold text-[#8A7B75] block mb-1">
+                    Expires (MM/YY)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="12/28"
+                    maxLength={5}
+                    required
+                    className="w-full p-2.5 rounded-lg bg-[#F8F3ED] border border-[#33231E]/15 font-mono text-[#1C1410] focus:outline-none focus:border-terracotta"
+                  />
+                </div>
+                <div>
+                  <label className="font-mono text-[10px] uppercase font-bold text-[#8A7B75] block mb-1">
+                    CVV
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="•••"
+                    maxLength={4}
+                    required
+                    className="w-full p-2.5 rounded-lg bg-[#F8F3ED] border border-[#33231E]/15 font-mono text-[#1C1410] focus:outline-none focus:border-terracotta"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddCardOpen(false)}
+                  className="flex-1 py-2 rounded-lg border border-[#33231E]/20 text-[#33231E] hover:bg-[#33231E]/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-lg bg-terracotta text-white font-medium hover:bg-terracotta-hover transition-colors"
+                >
+                  Save Card
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Payment Methods Modal */}
+      {isManageMethodsOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsManageMethodsOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-[#FFF9F3] border border-[#33231E]/20 rounded-2xl p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-[#33231E]/10 pb-3">
+              <h4 className="font-display text-base font-semibold text-[#1C1410]">Saved Payment Instruments</h4>
+              <button
+                type="button"
+                onClick={() => setIsManageMethodsOpen(false)}
+                className="text-[#8A7B75] hover:text-[#1C1410] text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-[#F8F3ED] rounded-xl border border-[#33231E]/10 flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-[#1C1410] block">HDFC Bank Visa ending 4082</span>
+                  <span className="text-[10px] text-[#8A7B75]">Primary settlement method • 3D Secure active</span>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold">
+                  DEFAULT
+                </span>
+              </div>
+
+              <div className="p-3 bg-[#F8F3ED] rounded-xl border border-[#33231E]/10 flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-[#1C1410] block">UPI: {user?.display_name ? user.display_name.toLowerCase() : 'traveler'}@okaxis</span>
+                  <span className="text-[10px] text-[#8A7B75]">One-click approval enabled for instant bookings</span>
+                </div>
+                <span className="text-[10px] text-[#8A7B75] font-mono">LINKED</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsManageMethodsOpen(false)}
+                className="px-4 py-2 bg-terracotta text-white rounded-lg text-xs font-medium hover:bg-terracotta-hover transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

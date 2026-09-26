@@ -39,6 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<FormattedAuthError | null>(null);
 
+  
+
   const clearAuthError = useCallback(() => {
     setAuthError(null);
   }, []);
@@ -49,25 +51,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await AuthService.getProfile(userId);
       if (res.data) {
         setProfile(res.data);
-        setUser({
+        const newUser: User = {
           id: res.data.id,
           email: res.data.email,
           full_name: res.data.full_name,
+          display_name: res.data.display_name || res.data.full_name.split(' ')[0],
           avatar_url: res.data.avatar_url || undefined,
           role: res.data.role,
           status: res.data.status,
           organization_id: res.data.organization_id || undefined,
           created_at: res.data.created_at,
           updated_at: res.data.updated_at,
-        });
+        };
+        setUser(newUser);
+        localStorage.setItem('triplanner_active_user', JSON.stringify(newUser));
+        localStorage.setItem('triplanner_user_role', res.data.role);
       } else if (authEmail) {
         // Fallback profile if record is still pending trigger execution
+        const registeredName = localStorage.getItem('triplanner_pending_name') || authEmail.split('@')[0];
         const fallbackProfile: Profile = {
           id: userId,
           auth_user_id: userId,
           email: authEmail,
-          full_name: authEmail.split('@')[0],
-          display_name: authEmail.split('@')[0],
+          full_name: registeredName,
+          display_name: registeredName.split(' ')[0],
           avatar_url: null,
           phone: null,
           role: 'traveler',
@@ -78,15 +85,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updated_at: new Date().toISOString(),
         };
         setProfile(fallbackProfile);
-        setUser({
+        const newUser: User = {
           id: userId,
           email: authEmail,
-          full_name: fallbackProfile.full_name,
+          full_name: registeredName,
+          display_name: registeredName.split(' ')[0],
           role: 'traveler',
           status: 'active',
           created_at: fallbackProfile.created_at,
           updated_at: fallbackProfile.updated_at,
-        });
+        };
+        setUser(newUser);
+        localStorage.setItem('triplanner_active_user', JSON.stringify(newUser));
+        localStorage.setItem('triplanner_user_role', 'traveler');
       }
     } catch (err) {
       console.warn('[AuthContext] syncProfile error:', err);
@@ -115,8 +126,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Check for stored demo role session in localStorage
-        const savedRole = localStorage.getItem('triplanner_user_role') as UserRole | null;
+        // First restore active authenticated user from localStorage if present
+        const storedUser = localStorage.getItem('triplanner_active_user');
+        if (mounted && storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (parsed && parsed.full_name) {
+              setUser(parsed);
+              setProfile({
+                id: parsed.id,
+                auth_user_id: parsed.id,
+                email: parsed.email,
+                full_name: parsed.full_name,
+                display_name: parsed.display_name || parsed.full_name.split(' ')[0],
+                avatar_url: parsed.avatar_url || null,
+                phone: null,
+                role: parsed.role || 'traveler',
+                status: parsed.status || 'active',
+                organization_id: parsed.organization_id || null,
+                onboarding_completed: true,
+                created_at: parsed.created_at || new Date().toISOString(),
+                updated_at: parsed.updated_at || new Date().toISOString(),
+              });
+              setIsLoading(false);
+              return;
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+
+        // Check for stored demo role session in localStorage ONLY when mock data is permitted
+        const isMockAllowed = env.enableMockData && !import.meta.env.PROD;
+        const savedRole = isMockAllowed
+          ? (localStorage.getItem('triplanner_user_role') as UserRole | null)
+          : null;
         if (mounted && savedRole) {
           const demo = AuthService.getMockProfileForRole(savedRole);
           setProfile(demo);
@@ -124,6 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: demo.id,
             email: demo.email,
             full_name: demo.full_name,
+            display_name: demo.display_name || demo.full_name.split(' ')[0],
             avatar_url: demo.avatar_url || undefined,
             role: demo.role,
             status: demo.status,
@@ -174,6 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Auth Operations
   const signUp = async (email: string, password: string, fullName: string) => {
     setAuthError(null);
+    localStorage.setItem('triplanner_pending_name', fullName);
     const res = await AuthService.signUpWithPassword(email, password, fullName);
     if (res.error) {
       setAuthError(res.error);
@@ -206,7 +252,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setAuthError(null);
     try {
+      localStorage.removeItem('triplanner_active_user');
       localStorage.removeItem('triplanner_user_role');
+      localStorage.removeItem('triplanner_pending_name');
       await AuthService.signOut();
     } catch {
       // Ignore network errors on mock logout
@@ -262,6 +310,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsDemoUser = (targetRole: UserRole) => {
+    // In production builds, demo auth bypass is strictly forbidden
+    if (import.meta.env.PROD && !env.enableMockData) {
+      console.error('[Security] Demo authentication bypass is strictly disabled in production builds.');
+      return;
+    }
     try {
       localStorage.setItem('triplanner_user_role', targetRole);
     } catch {
@@ -273,6 +326,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: demo.id,
       email: demo.email,
       full_name: demo.full_name,
+      display_name: demo.display_name || demo.full_name.split(' ')[0],
       avatar_url: demo.avatar_url || undefined,
       role: demo.role,
       status: demo.status,

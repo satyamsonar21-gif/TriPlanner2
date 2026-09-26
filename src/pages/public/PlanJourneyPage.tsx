@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Sparkles,
   CheckCircle2,
   ShieldCheck,
+  MapPin,
+  Compass,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { HeroJourneyCard } from '@/components/signature/HeroJourneyCard';
+import { MapView, PlacesSearchInput } from '@/components/geo';
 import { DestinationService } from '@/domains/destinations/destination.service';
+import { JourneyService } from '@/domains/journeys/journey.service';
+import { type GeoLocation, DEMO_LOCATION_FIXTURES } from '@/domains/geo';
 import type { Destination } from '@/types/database.types';
 
 export const PlanJourneyPage: React.FC = () => {
@@ -16,32 +21,84 @@ export const PlanJourneyPage: React.FC = () => {
 
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [selectedDestinationSlug, setSelectedDestinationSlug] = useState<string>('goa');
+  const [selectedGeoLocation, setSelectedGeoLocation] = useState<GeoLocation>(
+    DEMO_LOCATION_FIXTURES[0]
+  );
+  const [locationConfirmed, setLocationConfirmed] = useState<boolean>(true);
   const [selectedPace, setSelectedPace] = useState<'relaxed' | 'balanced' | 'fast-paced'>('balanced');
   const [selectedStyles, setSelectedStyles] = useState<string[]>(['Adventure', 'Food']);
   const [durationDays, setDurationDays] = useState<number>(5);
   const [budgetPerDay, setBudgetPerDay] = useState<number>(4000);
   const [generationStep, setGenerationStep] = useState<string | null>(null);
   const [generatedPassReady, setGeneratedPassReady] = useState(false);
+  const [createdJourneyId, setCreatedJourneyId] = useState<string>('jrn_goa_01');
 
   useEffect(() => {
     DestinationService.getAll().then((data) => {
       setDestinations(data);
       const queryDest = searchParams.get('destination');
-      if (queryDest && data.some((d) => d.slug === queryDest)) {
-        setSelectedDestinationSlug(queryDest);
+      const matched = data.find((d) => d.slug === queryDest) || data[0];
+      if (matched) {
+        setSelectedDestinationSlug(matched.slug);
+        setSelectedGeoLocation(DestinationService.getCanonicalLocation(matched));
+        setBudgetPerDay(matched.average_daily_budget || 4000);
       }
     });
   }, [searchParams]);
 
-  const currentDestination =
-    destinations.find((d) => d.slug === selectedDestinationSlug) ||
-    destinations[0] || {
-      name: 'Goa',
-      country: 'India',
-      average_daily_budget: 3500,
-    };
+  const currentDestination = useMemo(
+    () =>
+      destinations.find((d) => d.slug === selectedDestinationSlug) ||
+      destinations[0],
+    [destinations, selectedDestinationSlug]
+  );
+
+  const previewMarkers = useMemo(() => {
+    if (currentDestination && currentDestination.name.toLowerCase() === selectedGeoLocation.name.toLowerCase()) {
+      const nearby = DestinationService.getNearbyExperiences(currentDestination);
+      return [
+        {
+          id: selectedGeoLocation.id,
+          position: selectedGeoLocation.coordinate,
+          title: selectedGeoLocation.name,
+          sequenceNumber: 1,
+        },
+        ...nearby.slice(0, 3).map((loc, idx) => ({
+          id: loc.id,
+          position: loc.coordinate,
+          title: loc.name,
+          sequenceNumber: idx + 2,
+        })),
+      ];
+    }
+
+    return [
+      {
+        id: selectedGeoLocation.id,
+        position: selectedGeoLocation.coordinate,
+        title: selectedGeoLocation.name,
+        sequenceNumber: 1,
+      },
+    ];
+  }, [currentDestination, selectedGeoLocation]);
 
   const estimatedTotalBudget = durationDays * budgetPerDay;
+
+  const handlePlaceSearchSelect = (place: GeoLocation) => {
+    setSelectedGeoLocation(place);
+    setLocationConfirmed(true);
+    setGeneratedPassReady(false);
+
+    const catalogMatch = destinations.find(
+      (d) =>
+        d.name.toLowerCase() === place.name.toLowerCase() ||
+        d.id === place.id
+    );
+    if (catalogMatch) {
+      setSelectedDestinationSlug(catalogMatch.slug);
+      setBudgetPerDay(catalogMatch.average_daily_budget || 4000);
+    }
+  };
 
   const toggleStyle = (style: string) => {
     if (selectedStyles.includes(style)) {
@@ -55,11 +112,11 @@ export const PlanJourneyPage: React.FC = () => {
 
   const handleGenerateJourney = () => {
     const steps = [
-      'Understanding your travel preferences...',
-      'Checking regional route availability...',
+      `Resolving canonical coordinates for ${selectedGeoLocation.name}...`,
+      'Checking regional route availability & travel times...',
       'Building your living dependency graph...',
-      'Verifying transit buffers & opening hours...',
-      'Preparing proactive alternatives...',
+      'Verifying transfer safety buffers & opening hours...',
+      'Preparing proactive location-aware alternatives...',
     ];
 
     let current = 0;
@@ -71,10 +128,19 @@ export const PlanJourneyPage: React.FC = () => {
         setGenerationStep(steps[current]);
       } else {
         clearInterval(interval);
+        const created = JourneyService.createPlannedJourney({
+          destinationLocation: selectedGeoLocation,
+          durationDays,
+          budgetPerDay,
+          styles: selectedStyles,
+          pace: selectedPace,
+          heroImage: currentDestination?.hero_image,
+        });
+        setCreatedJourneyId(created.id);
         setGenerationStep(null);
         setGeneratedPassReady(true);
       }
-    }, 450);
+    }, 350);
   };
 
   return (
@@ -96,7 +162,7 @@ export const PlanJourneyPage: React.FC = () => {
             Build Your Living Journey
           </h1>
           <p className="text-stone-gray text-sm sm:text-base max-w-2xl leading-relaxed">
-            Configure your destination, rhythm, style, and budget. The Living Journey Engine constructs a synchronized itinerary passport that adapts dynamically if reality shifts.
+            Search and confirm your destination, rhythm, style, and budget. The Living Journey Engine constructs a geographically verified itinerary passport that adapts dynamically if reality shifts.
           </p>
         </div>
       </section>
@@ -106,20 +172,70 @@ export const PlanJourneyPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* LEFT: Configuration Options */}
           <div className="lg:col-span-7 space-y-8 bg-soft-ivory border border-espresso/20 p-6 sm:p-8 shadow-xs">
-            {/* 1. Destination Selector */}
-            <div className="space-y-3">
-              <label className="font-mono text-xs uppercase tracking-wider text-deep-slate font-semibold block">
-                01 / SELECT DESTINATION
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {/* 1. Destination Search & Selector */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="font-mono text-xs uppercase tracking-wider text-deep-slate font-semibold block">
+                  01 / SEARCH OR SELECT DESTINATION
+                </label>
+                {locationConfirmed && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Location Confirmed
+                  </span>
+                )}
+              </div>
+
+              {/* Normalized Location Search Input */}
+              <PlacesSearchInput
+                initialValue={selectedGeoLocation.name}
+                onPlaceSelected={handlePlaceSearchSelect}
+                placeholder="Search destination (e.g., Goa, Jaipur, Kerala, Istanbul)..."
+              />
+
+              {/* Selected Canonical Location Details Banner */}
+              <div
+                data-testid="selected-location-summary"
+                className="p-3.5 rounded-lg bg-parchment/70 border border-espresso/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+              >
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-display text-sm font-semibold text-deep-slate block">
+                      {selectedGeoLocation.name}
+                    </span>
+                    <span className="text-[11px] text-stone-gray block">
+                      {selectedGeoLocation.formattedAddress}
+                    </span>
+                  </div>
+                </div>
+                <div className="font-mono text-[10px] text-espresso sm:text-right space-y-0.5">
+                  <span className="block">
+                    LAT {selectedGeoLocation.latitude.toFixed(4)}° · LNG{' '}
+                    {selectedGeoLocation.longitude.toFixed(4)}°
+                  </span>
+                  <span className="block text-stone-gray uppercase">
+                    REF: {selectedGeoLocation.providerPlaceId || selectedGeoLocation.id}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Curated Destination Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                 {destinations.map((dest) => {
-                  const isSelected = selectedDestinationSlug === dest.slug;
+                  const isSelected =
+                    selectedGeoLocation.name.toLowerCase() ===
+                    dest.name.toLowerCase();
                   return (
                     <button
                       key={dest.id}
                       type="button"
                       onClick={() => {
                         setSelectedDestinationSlug(dest.slug);
+                        setSelectedGeoLocation(
+                          DestinationService.getCanonicalLocation(dest)
+                        );
+                        setLocationConfirmed(true);
                         setBudgetPerDay(dest.average_daily_budget || 4000);
                       }}
                       className={`p-3 text-left border transition-all ${
@@ -178,31 +294,35 @@ export const PlanJourneyPage: React.FC = () => {
             {/* 3. Travel Pace */}
             <div className="space-y-3 pt-4 border-t border-espresso/15">
               <label className="font-mono text-xs uppercase tracking-wider text-deep-slate font-semibold block">
-                03 / TRAVEL PACE & TRANSIT BUFFERS
+                03 / TRAVEL PACE & TRANSIT SAFETY BUFFERS
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   {
                     id: 'relaxed',
                     title: 'Relaxed Pace',
-                    desc: '1-2 key stops/day with generous free exploration buffers.',
+                    desc: '1-2 key stops/day with 25m transfer safety buffers.',
                   },
                   {
                     id: 'balanced',
                     title: 'Balanced Pace',
-                    desc: '2-3 stops/day. Perfect blend of highlights & relaxation.',
+                    desc: '2-3 stops/day with 15m transfer safety buffers.',
                   },
                   {
                     id: 'fast-paced',
                     title: 'Deep Exploration',
-                    desc: '3-4 stops/day for comprehensive cultural immersion.',
+                    desc: '3-4 stops/day with 10m transfer safety buffers.',
                   },
                 ].map((pace) => {
                   const isSelected = selectedPace === pace.id;
                   return (
                     <div
                       key={pace.id}
-                      onClick={() => setSelectedPace(pace.id as any)}
+                      onClick={() =>
+                        setSelectedPace(
+                          pace.id as 'relaxed' | 'balanced' | 'fast-paced'
+                        )
+                      }
                       className={`p-3.5 border transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-parchment border-terracotta shadow-2xs ring-1 ring-terracotta/30'
@@ -272,7 +392,9 @@ export const PlanJourneyPage: React.FC = () => {
               {generationStep ? (
                 <div className="p-4 bg-parchment border border-terracotta/40 text-center space-y-2">
                   <span className="inline-block w-4 h-4 border-2 border-terracotta border-t-transparent rounded-full animate-spin" />
-                  <p className="font-mono text-xs text-espresso font-medium">{generationStep}</p>
+                  <p className="font-mono text-xs text-espresso font-medium">
+                    {generationStep}
+                  </p>
                 </div>
               ) : generatedPassReady ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-300 text-center space-y-3">
@@ -281,13 +403,20 @@ export const PlanJourneyPage: React.FC = () => {
                     <span>Living Journey Pass Successfully Architected!</span>
                   </div>
                   <p className="text-xs text-stone-gray max-w-md mx-auto">
-                    Your itinerary graph has been compiled with zero scheduling conflicts and proactive alternative routing.
+                    Your itinerary route graph for{' '}
+                    <strong>{selectedGeoLocation.name}</strong> has been compiled
+                    with verified transfer buffers and proactive alternative routing.
                   </p>
-                  <div className="flex justify-center gap-3 pt-1">
-                    <Link to="/dashboard">
-                      <Button variant="primary" size="sm" className="bg-terracotta font-mono text-xs uppercase">
-                        View In Traveler Workspace
-                      </Button>
+                  <div className="flex flex-wrap justify-center gap-3 pt-1">
+                    <Link
+                      to={`/journeys/${createdJourneyId}`}
+                      className={buttonVariants({
+                        variant: 'primary',
+                        size: 'sm',
+                        className: 'bg-terracotta font-mono text-xs uppercase',
+                      })}
+                    >
+                      Inspect Route & Feasibility Blueprint
                     </Link>
                     <Button
                       variant="outline"
@@ -313,26 +442,51 @@ export const PlanJourneyPage: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: Live Synchronized Passport Artifact */}
-          <div className="lg:col-span-5 space-y-4">
+          {/* RIGHT: Live Synchronized Passport & Spatial Map Preview */}
+          <div className="lg:col-span-5 space-y-5">
             <div className="flex items-center justify-between text-xs font-mono text-stone-gray px-1">
-              <span>LIVE DOCUMENT PREVIEW</span>
+              <span>LIVE DOCUMENT & SPATIAL PREVIEW</span>
               <span className="text-terracotta font-semibold">SYNCHRONIZING</span>
             </div>
 
             <HeroJourneyCard
-              destination={currentDestination.name.toUpperCase()}
+              destination={selectedGeoLocation.name.toUpperCase()}
               duration={`${durationDays} DAYS`}
               style={selectedStyles.join(' + ').toUpperCase()}
               budget={`₹${estimatedTotalBudget.toLocaleString()}`}
               status={generatedPassReady ? 'ACTIVE & MONITORED' : 'CONFIGURING'}
             />
 
+            {/* Spatial Map Preview using Normalized Coordinates */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-mono text-stone-gray px-1">
+                <span className="flex items-center gap-1 text-deep-slate font-semibold">
+                  <Compass className="w-3.5 h-3.5 text-terracotta" />
+                  <span>CANONICAL DESTINATION MAP</span>
+                </span>
+                <span>{previewMarkers.length} Stops Indexed</span>
+              </div>
+              <MapView
+                center={selectedGeoLocation.coordinate}
+                zoom={11}
+                markers={previewMarkers}
+                showRoutePolyline={previewMarkers.length > 1}
+                isDemoData={Boolean(selectedGeoLocation.isDemoFixture)}
+                ariaLabel={`Destination map preview for ${selectedGeoLocation.name}`}
+                className="w-full h-64 rounded-xl"
+              />
+            </div>
+
             <div className="p-4 bg-parchment/60 border border-espresso/15 text-xs text-stone-gray space-y-2">
               <div className="flex items-start gap-2">
                 <ShieldCheck className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
                 <p>
-                  <strong className="text-deep-slate font-medium">Deterministic Guard:</strong> All transit intervals between activities are automatically padded with verified traffic buffers for {currentDestination.name}.
+                  <strong className="text-deep-slate font-medium">
+                    Deterministic Spatial Guard:
+                  </strong>{' '}
+                  All transit intervals between activities in{' '}
+                  {selectedGeoLocation.name} are validated against route travel
+                  times and configured safety buffers.
                 </p>
               </div>
             </div>

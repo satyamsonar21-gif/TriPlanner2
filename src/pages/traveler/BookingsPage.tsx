@@ -10,8 +10,11 @@ import {
   Car,
   Utensils,
   MoreVertical,
-  Download,
   HelpCircle,
+  Printer,
+  QrCode,
+  ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 import { MOCK_TRAVELER_BOOKINGS, type TravelerBooking } from '@/domains/traveler/traveler.data';
 
@@ -64,10 +67,11 @@ export const BookingsPage: React.FC = () => {
           </p>
         </div>
 
-        <Link to="/plan">
-          <button className="px-4 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs">
-            + Add New Reservation
-          </button>
+        <Link
+          to="/plan"
+          className="px-4 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs"
+        >
+          + Add New Reservation
         </Link>
       </div>
 
@@ -309,10 +313,11 @@ export const BookingsPage: React.FC = () => {
             </div>
 
             <div className="pt-3">
-              <Link to="/payments">
-                <button className="w-full py-2 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors">
-                  View Invoices & Receipts
-                </button>
+              <Link
+                to="/payments"
+                className="block w-full text-center py-2 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors"
+              >
+                View Invoices & Receipts
               </Link>
             </div>
           </div>
@@ -333,55 +338,140 @@ export const BookingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Booking Details Modal */}
+      {/* Official Printable Voucher Modal */}
       {selectedBookingForModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
           onClick={() => setSelectedBookingForModal(null)}
         >
           <div
-            className="w-full max-w-lg bg-[#FFF9F3] border border-[#33231E]/20 rounded-2xl p-6 shadow-2xl space-y-5"
+            className="w-full max-w-2xl bg-[#FFF9F3] border border-[#33231E]/20 rounded-2xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start border-b border-[#33231E]/10 pb-3">
-              <div>
-                <span className="font-mono text-[9px] uppercase text-stone-gray block">
-                  VOUCHER CONFIRMATION
-                </span>
-                <h3 className="font-display text-xl text-deep-slate font-semibold">
-                  {selectedBookingForModal.title}
-                </h3>
+            {/* Voucher Header / Airline & Boutique Pass Banner */}
+            <div className="bg-[#33231E] text-[#FFF9F3] px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-terracotta" />
+                <div>
+                  <h3 className="font-display text-base font-semibold tracking-wide uppercase">
+                    TripPlanner Official Voucher
+                  </h3>
+                  <span className="font-mono text-[10px] text-[#C2B29F] tracking-widest uppercase block">
+                    Living Pass Architecture • Ref: {selectedBookingForModal.bookingCode}
+                  </span>
+                </div>
               </div>
-              <button
-                onClick={() => setSelectedBookingForModal(null)}
-                className="text-stone-gray hover:text-espresso"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline-block px-2.5 py-1 bg-white/10 rounded font-mono text-[10px] text-emerald-300 font-medium uppercase tracking-wider">
+                  Verified & Confirmed
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBookingForModal(null)}
+                  className="text-[#C2B29F] hover:text-white text-sm"
+                  aria-label="Close voucher"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <p><strong>Provider:</strong> {selectedBookingForModal.provider}</p>
-              <p><strong>Location:</strong> {selectedBookingForModal.location}</p>
-              <p><strong>Dates:</strong> {selectedBookingForModal.dates}</p>
-              <p><strong>Booking Reference:</strong> <span className="font-mono text-terracotta font-bold">{selectedBookingForModal.bookingCode}</span></p>
-              <p><strong>Total Amount:</strong> ₹{selectedBookingForModal.amount.toLocaleString()} ({selectedBookingForModal.paymentStatus})</p>
-            </div>
+            {/* Voucher Body */}
+            <div className="p-6 space-y-6">
+              {/* Top Service Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#33231E]/10">
+                <div>
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#8A7B75]">
+                    Service Item
+                  </span>
+                  <h4 className="font-display text-2xl text-[#1C1410] font-semibold">
+                    {selectedBookingForModal.title}
+                  </h4>
+                  <p className="text-xs text-[#8A7B75] mt-0.5">
+                    {selectedBookingForModal.provider} • {selectedBookingForModal.location}
+                  </p>
+                </div>
+                <div className="sm:text-right shrink-0">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#8A7B75] block">
+                    Amount Paid
+                  </span>
+                  <span className="font-mono text-xl font-bold text-terracotta">
+                    ₹{selectedBookingForModal.amount.toLocaleString()}
+                  </span>
+                  <span className="font-mono text-[10px] text-emerald-700 font-semibold block">
+                    PAID IN FULL
+                  </span>
+                </div>
+              </div>
 
-            <div className="pt-3 border-t border-[#33231E]/10 flex gap-3">
-              <button
-                onClick={() => setSelectedBookingForModal(null)}
-                className="flex-1 py-2 bg-terracotta text-white rounded-lg text-xs font-medium"
-              >
-                Close Details
-              </button>
-              <button
-                onClick={() => alert(`Downloading official PDF voucher for ${selectedBookingForModal.bookingCode}...`)}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 border border-[#33231E]/20 rounded-lg text-xs font-medium text-espresso"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>PDF Voucher</span>
-              </button>
+              {/* Grid Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="p-3 bg-white/60 border border-[#33231E]/10 rounded-xl space-y-1">
+                  <span className="font-mono text-[10px] uppercase text-[#8A7B75] block">Schedule Dates</span>
+                  <span className="font-semibold text-[#1C1410] block">{selectedBookingForModal.dates}</span>
+                  <span className="text-[11px] text-[#8A7B75]">Local Standard Time</span>
+                </div>
+
+                <div className="p-3 bg-white/60 border border-[#33231E]/10 rounded-xl space-y-1">
+                  <span className="font-mono text-[10px] uppercase text-[#8A7B75] block">Status</span>
+                  <span className="font-semibold text-emerald-700 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{selectedBookingForModal.status.toUpperCase()}</span>
+                  </span>
+                  <span className="text-[11px] text-[#8A7B75]">Instant Check-in Ready</span>
+                </div>
+
+                <div className="p-3 bg-white/60 border border-[#33231E]/10 rounded-xl space-y-1">
+                  <span className="font-mono text-[10px] uppercase text-[#8A7B75] block">Traveler</span>
+                  <span className="font-semibold text-[#1C1410] block">Satyam Sonar (Lead)</span>
+                  <span className="text-[11px] text-[#8A7B75]">Trip Ref: TUR-2026-GOA</span>
+                </div>
+              </div>
+
+              {/* QR Verification & Barcode Representation */}
+              <div className="p-4 bg-white/80 border border-[#33231E]/15 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-16 h-16 bg-[#33231E] rounded-lg p-1.5 flex items-center justify-center shrink-0">
+                    <QrCode className="w-12 h-12 text-[#FFF9F3]" />
+                  </div>
+                  <div>
+                    <span className="font-mono text-[10px] uppercase text-[#8A7B75] block">
+                      Digital Pass Verification
+                    </span>
+                    <span className="font-mono text-sm font-bold text-terracotta tracking-wider">
+                      {selectedBookingForModal.bookingCode}
+                    </span>
+                    <p className="text-[11px] text-[#8A7B75] mt-0.5">
+                      Present at reception or gate. Guaranteed by Living Journey Engine™.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="font-mono text-[9px] text-[#8A7B75] sm:text-right space-y-0.5 shrink-0">
+                  <div>ISSUER: TRIPPLANNER PLATFORM</div>
+                  <div>PROTOCOL: SHA-256 SECURED</div>
+                  <div>COORD: 24/7 +91 832 272 8888</div>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="pt-2 border-t border-[#33231E]/10 flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBookingForModal(null)}
+                  className="px-4 py-2 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-5 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print / Save as PDF</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

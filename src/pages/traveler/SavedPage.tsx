@@ -31,10 +31,11 @@ export const SavedPage: React.FC = () => {
           </p>
         </div>
 
-        <Link to="/explore-destinations">
-          <button className="px-4 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs">
-            + Discover More Places
-          </button>
+        <Link
+          to="/explore-destinations"
+          className="px-4 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs"
+        >
+          + Discover More Places
         </Link>
       </div>
 
@@ -120,10 +121,11 @@ export const SavedPage: React.FC = () => {
                         <span className="text-[#8A7B75] text-[10px] ml-1">({item.duration})</span>
                       </div>
 
-                      <Link to={`/explore-destinations`}>
-                        <button className="px-3 py-1.5 rounded-lg bg-transparent border border-[#33231E]/20 text-[#33231E] hover:bg-terracotta hover:text-white hover:border-terracotta text-xs font-medium transition-colors">
-                          Explore
-                        </button>
+                      <Link
+                        to={`/explore-destinations`}
+                        className="px-3 py-1.5 rounded-lg bg-transparent border border-[#33231E]/20 text-[#33231E] hover:bg-terracotta hover:text-white hover:border-terracotta text-xs font-medium transition-colors"
+                      >
+                        Explore
                       </Link>
                     </div>
                   </div>
@@ -178,10 +180,11 @@ export const SavedPage: React.FC = () => {
                       <span className="font-mono text-xs font-bold text-terracotta hidden sm:inline">
                         {itin.budget}
                       </span>
-                      <Link to="/plan">
-                        <button className="px-3 py-1.5 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium">
-                          Build Trip
-                        </button>
+                      <Link
+                        to="/plan"
+                        className="px-3 py-1.5 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium"
+                      >
+                        Build Trip
                       </Link>
                     </div>
                   </div>
@@ -283,7 +286,7 @@ export const SavedPage: React.FC = () => {
             </h3>
             <div className="space-y-2">
               {[
-                { name: 'Summer Vacation Ideas', count: '8 items', tag: 'Upcoming 2025' },
+                { name: 'Summer Vacation Ideas', count: '8 items', tag: 'Upcoming 2026' },
                 { name: 'Europe 2026 Grand Tour', count: '10 items', tag: 'Dream List' },
                 { name: 'Adventure & Diving Wishlist', count: '6 items', tag: 'Active' },
               ].map((col, i) => (

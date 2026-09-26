@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/core/auth/AuthContext';
 import {
   Briefcase,
   Ticket,
@@ -15,16 +16,28 @@ import {
   MoreVertical,
   ChevronRight,
   Sparkles,
-  X,
-  Check,
-  Clock,
 } from 'lucide-react';
 import { MOCK_TRAVELER_METRICS } from '@/domains/traveler/traveler.data';
+import { DestinationWeatherWidget } from '@/components/traveler/DestinationWeatherWidget';
+import {
+  ensureGoaDemoChangeRequest,
+  sharedLivingJourneyEngine,
+  type EngineChangeRequest,
+  type JourneySnapshot,
+} from '@/domains/journey-engine';
+import { ChangeReviewPanel } from '@/components/journey-engine';
 
 export const TravelerDashboardPage: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeAlertModal, setActiveAlertModal] = useState(false);
-  const [alternativeApplied, setAlternativeApplied] = useState(false);
+  const [changeRequest, setChangeRequest] = useState<EngineChangeRequest>(() =>
+    ensureGoaDemoChangeRequest()
+  );
+  const [goaSnapshot, setGoaSnapshot] = useState<JourneySnapshot>(
+    () => sharedLivingJourneyEngine.getSnapshot('jrn_goa_01')!
+  );
+  const alternativeApplied = changeRequest.state === 'APPLIED';
 
   return (
     <div className="space-y-7 font-body pb-12">
@@ -34,16 +47,17 @@ export const TravelerDashboardPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#1C1410] tracking-tight">
-            Good morning, Ananya 👋
+            Good morning, {user?.display_name || user?.full_name || 'Traveler'} 👋
           </h1>
           <p className="text-xs sm:text-sm text-[#8A7B75] mt-1 font-body">
             Let&apos;s continue planning your next great journey.
           </p>
         </div>
-        <Link to="/plan" className="sm:self-center">
-          <button className="text-xs font-mono font-medium text-terracotta hover:text-terracotta-hover hover:underline flex items-center gap-1">
-            <span>+ Quick Plan New Trip</span>
-          </button>
+        <Link
+          to="/plan"
+          className="sm:self-center text-xs font-mono font-medium text-terracotta hover:text-terracotta-hover hover:underline flex items-center gap-1"
+        >
+          <span>+ Quick Plan New Trip</span>
         </Link>
       </div>
 
@@ -220,7 +234,7 @@ export const TravelerDashboardPage: React.FC = () => {
                   <div className="flex items-center gap-4 text-xs text-[#8A7B75] mt-1.5 font-medium">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-stone-gray" />
-                      12 May – 16 May 2025
+                      12 May – 16 May 2026
                     </span>
                     <span>•</span>
                     <span>2 Travelers</span>
@@ -293,20 +307,25 @@ export const TravelerDashboardPage: React.FC = () => {
 
                 {/* Bottom Actions */}
                 <div className="flex items-center gap-3 pt-3">
-                  <Link to="/journeys/jrn_goa_01" className="flex-1">
-                    <button className="w-full py-2 px-4 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs">
-                      View Journey
-                    </button>
+                  <Link
+                    to="/journeys/jrn_goa_01"
+                    className="flex-1 text-center py-2 px-4 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs"
+                  >
+                    View Journey
                   </Link>
-                  <Link to="/bookings" className="flex-1">
-                    <button className="w-full py-2 px-4 rounded-lg bg-transparent border border-[#33231E]/20 hover:bg-[#33231E]/5 text-[#33231E] text-xs font-medium transition-colors">
-                      Manage Trip
-                    </button>
+                  <Link
+                    to="/bookings"
+                    className="flex-1 text-center py-2 px-4 rounded-lg bg-transparent border border-[#33231E]/20 hover:bg-[#33231E]/5 text-[#33231E] text-xs font-medium transition-colors"
+                  >
+                    Manage Trip
                   </Link>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* REAL-TIME WEATHER INTEGRATION COMPONENT */}
+          <DestinationWeatherWidget initialDestinationId="dest_goa_01" />
 
           {/* MY JOURNEYS LIST WIDGET */}
           <div className="space-y-3">
@@ -343,7 +362,7 @@ export const TravelerDashboardPage: React.FC = () => {
 
                 <div className="flex items-center gap-4 shrink-0">
                   <span className="font-mono text-xs text-[#8A7B75] hidden sm:inline">
-                    20 May – 26 May 2025
+                    20 May – 26 May 2026
                   </span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#F3E7DC] text-[#7A3622] font-semibold">
                     Upcoming
@@ -377,7 +396,7 @@ export const TravelerDashboardPage: React.FC = () => {
 
                 <div className="flex items-center gap-4 shrink-0">
                   <span className="font-mono text-xs text-[#8A7B75] hidden sm:inline">
-                    10 Jun – 15 Jun 2025
+                    10 Jun – 15 Jun 2026
                   </span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#EAE2D8] text-[#554742] font-semibold">
                     Planning
@@ -411,7 +430,7 @@ export const TravelerDashboardPage: React.FC = () => {
 
                 <div className="flex items-center gap-4 shrink-0">
                   <span className="font-mono text-xs text-[#8A7B75] hidden sm:inline">
-                    5 Jul – 8 Jul 2025
+                    5 Jul – 8 Jul 2026
                   </span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E5DFD7] text-[#6B5E59] font-semibold">
                     Saved
@@ -484,31 +503,31 @@ export const TravelerDashboardPage: React.FC = () => {
                 <div className="mt-5 pt-3 border-t border-[#33231E]/15 flex items-baseline justify-between">
                   <div>
                     <span className="text-[9px] font-mono uppercase tracking-wider text-[#8A7B75] block">
-                      BUDGET
+                      ALLOCATED / BUDGET CAP
                     </span>
                     <div className="flex items-baseline gap-1.5">
                       <span className="font-display text-xl font-bold text-[#1C1410]">
-                        ₹40,000
+                        ₹{goaSnapshot.allocatedCost.toLocaleString()}
                       </span>
                       <span className="text-[9px] text-[#8A7B75] font-mono uppercase">
-                        PER TRAVELER
+                        / ₹{goaSnapshot.totalBudget.toLocaleString()}
                       </span>
                     </div>
                   </div>
 
                   <div className="text-right">
                     <span className="text-[9px] font-mono uppercase tracking-wider text-[#8A7B75] block">
-                      JOURNEY STATUS
+                      SNAPSHOT VERSION
                     </span>
                     <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold uppercase tracking-wider border border-emerald-300">
-                      ONGOING
+                      v{goaSnapshot.version} • {alternativeApplied ? 'RESOLVED' : 'ATTENTION'}
                     </span>
                   </div>
                 </div>
 
                 {/* Machine Readable Zone */}
                 <div className="mt-4 pt-3 border-t border-dashed border-[#33231E]/25 font-mono text-[8px] text-[#8A7B75]/90 tracking-widest break-all select-none leading-relaxed">
-                  TP&lt;&lt;ANANYA&lt;&lt;SHARMA&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                  TP&lt;&lt;{(user?.full_name || 'TRAVELER').toUpperCase().replace(/\s+/g, '&lt;&lt;')}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
                   <br />
                   GOA250512&lt;&lt;5D4N&lt;&lt;ADVENTURE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
                 </div>
@@ -621,14 +640,12 @@ export const TravelerDashboardPage: React.FC = () => {
               </p>
             </div>
 
-            <Link to="/plan" className="shrink-0">
-              <button
-                type="button"
-                className="w-10 h-10 rounded-full bg-terracotta text-white flex items-center justify-center hover:bg-terracotta-hover transition-transform hover:scale-105 shadow-xs"
-                aria-label="Create New Journey"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            <Link
+              to="/plan"
+              className="shrink-0 w-10 h-10 rounded-full bg-terracotta text-white flex items-center justify-center hover:bg-terracotta-hover transition-transform hover:scale-105 shadow-xs"
+              aria-label="Create New Journey"
+            >
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -639,98 +656,27 @@ export const TravelerDashboardPage: React.FC = () => {
       {/* ============================================================ */}
       {activeAlertModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in"
           onClick={() => setActiveAlertModal(false)}
         >
           <div
-            className="w-full max-w-xl bg-[#FFF9F3] border border-[#33231E]/20 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6"
+            className="w-full max-w-4xl my-8"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Living Engine Disruption Alert"
           >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-[#33231E]/15 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-terracotta/15 text-terracotta flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] uppercase tracking-widest text-terracotta font-bold block">
-                    LIVING ENGINE ADAPTATION ALERT
-                  </span>
-                  <h3 className="font-display text-xl text-[#1C1410] font-semibold">
-                    13 May Activity At Risk
-                  </h3>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveAlertModal(false)}
-                className="p-1 text-[#8A7B75] hover:text-[#1C1410]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Disruption Summary */}
-            <div className="p-4 bg-[#F4E8DC] rounded-xl border border-espresso/15 text-xs space-y-2">
-              <div className="flex justify-between font-mono text-[10px] text-stone-gray">
-                <span>EVENT: COASTAL ADVISORY</span>
-                <span>SEVERITY: HIGH</span>
-              </div>
-              <p className="font-semibold text-deep-slate">
-                Baga Reef Scuba Diving (14:00) is unavailable due to 2.8m ocean swells.
-              </p>
-              <p className="text-[#8A7B75] text-[11px]">
-                Impact Analysis: 1 activity disrupted. Downstream check-in at Chapora Café at 17:00 remains intact.
-              </p>
-            </div>
-
-            {/* Score-Matched Alternatives */}
-            <div className="space-y-3">
-              <span className="font-mono text-xs uppercase tracking-wider text-[#1C1410] font-semibold block">
-                RECOMMENDED ALTERNATIVE:
-              </span>
-
-              <div className="p-4 rounded-xl border-2 border-terracotta bg-soft-ivory shadow-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-display text-base font-semibold text-deep-slate">
-                    Backwater Kayaking & Mangrove Trail
-                  </h4>
-                  <span className="font-mono text-xs font-bold text-terracotta">
-                    ₹1,800 <span className="text-[10px] text-emerald-700 font-normal">(-₹2,400 refund)</span>
-                  </span>
-                </div>
-                <p className="text-xs text-[#8A7B75] flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5" /> 14:30 — 16:00 • Chorão Island Sanctuary
-                </p>
-                <p className="text-[11px] text-[#33231E]">
-                  96% compatibility match based on Ananya&apos;s Adventure + Nature profile. Sheltered inland waters unaffected by sea swell.
-                </p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="pt-2 border-t border-[#33231E]/15 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setActiveAlertModal(false)}
-                className="text-xs font-mono text-[#8A7B75] hover:text-[#1C1410]"
-              >
-                Dismiss For Now
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAlternativeApplied(true);
-                  setActiveAlertModal(false);
-                }}
-                className="px-5 py-2.5 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium font-mono uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
-              >
-                <Check className="w-4 h-4" />
-                <span>Apply Living Adjustment</span>
-              </button>
-            </div>
+            <ChangeReviewPanel
+              changeRequest={changeRequest}
+              snapshot={goaSnapshot}
+              actorId={user?.id || 'usr_traveler_01'}
+              actorRole="traveler"
+              onChangeUpdated={(updatedReq, updatedSnap) => {
+                setChangeRequest(updatedReq);
+                setGoaSnapshot(updatedSnap);
+              }}
+              onClose={() => setActiveAlertModal(false)}
+            />
           </div>
         </div>
       )}

@@ -21,9 +21,9 @@ const MOCK_PROFILES_STORE: Map<string, Profile> = new Map([
     {
       id: 'usr_traveler_01',
       auth_user_id: 'usr_traveler_01',
-      email: 'ananya.sharma@triplanner.travel',
-      full_name: 'Ananya Sharma',
-      display_name: 'Ananya',
+      email: 'satyam@triplanner.travel',
+      full_name: 'Satyam Sonar',
+      display_name: 'Satyam',
       avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
       phone: '+91 98200 12345',
       role: 'traveler',

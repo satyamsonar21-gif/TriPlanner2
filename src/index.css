@@ -53,3 +53,543 @@
   --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
+
+/* ============================================================
+   PREMIUM ANIMATION SYSTEM — Non-AI, Pure CSS Keyframes
+   ============================================================ */
+
+/* 1. FADE-IN-UP REVEAL (Staggered) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-600 { animation-delay: 600ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+.animate-delay-800 { animation-delay: 800ms; }
+
+/* 2. FADE-IN SCALE (for hero images) */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+/* 3. FLOAT (gentle bobbing for decorative elements) */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(0.5deg); }
+  50% { transform: translateY(-4px) rotate(-0.5deg); }
+  75% { transform: translateY(-10px) rotate(0.3deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.animate-float-slower {
+  animation: float 10s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* 4. INFINITE HORIZONTAL SCROLL (Destination Strip) */
+@keyframes scrollLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-scroll-left {
+  animation: scrollLeft 45s linear infinite;
+}
+
+.animate-scroll-left:hover {
+  animation-play-state: paused;
+}
+
+/* 5. SHIMMER GRADIENT (Premium loading / accent) */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(198, 161, 107, 0.15) 25%,
+    rgba(143, 50, 31, 0.12) 50%,
+    rgba(198, 161, 107, 0.15) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+/* 6. PULSE GLOW (for accent dots / live indicators) */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(143, 50, 31, 0.4);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(143, 50, 31, 0);
+    opacity: 0.85;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+/* 7. HERO TEXT GRADIENT REVEAL */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.text-gradient-animate {
+  background: linear-gradient(
+    135deg,
+    var(--terracotta) 0%,
+    var(--burnt-clay) 30%,
+    var(--antique-brass) 60%,
+    var(--terracotta) 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 6s ease infinite;
+}
+
+/* 8. PARALLAX LAYER (scroll-driven subtle depth) */
+@keyframes parallaxDrift {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-3px) translateX(2px); }
+  50% { transform: translateY(-6px) translateX(-1px); }
+  75% { transform: translateY(-2px) translateX(3px); }
+}
+
+.animate-parallax-drift {
+  animation: parallaxDrift 12s ease-in-out infinite;
+}
+
+/* 9. CARD HOVER LIFT (glassmorphic lift) */
+@keyframes liftUp {
+  from { transform: translateY(0); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  to { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(28, 20, 16, 0.12); }
+}
+
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(28, 20, 16, 0.12);
+}
+
+/* 10. SLIDE-IN-LEFT (for text reveals) */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+/* 11. ROTATE IN (for compass / icons) */
+@keyframes rotateIn {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
+.animate-rotate-in {
+  animation: rotateIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+/* 12. BORDER TRACE (animated border highlight) */
+@keyframes borderTrace {
+  0% { border-color: rgba(143, 50, 31, 0.1); }
+  50% { border-color: rgba(143, 50, 31, 0.5); }
+  100% { border-color: rgba(143, 50, 31, 0.1); }
+}
+
+.animate-border-trace {
+  animation: borderTrace 3s ease-in-out infinite;
+}
+
+/* 13. KENBURNS (slow zoom for hero images) */
+@keyframes kenBurns {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.animate-ken-burns {
+  animation: kenBurns 18s ease-in-out infinite;
+}
+
+/* 14. CROSSFADE (for hero image carousel) */
+@keyframes crossfadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes crossfadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.animate-crossfade-in {
+  animation: crossfadeIn 1.2s ease-in-out forwards;
+}
+
+.animate-crossfade-out {
+  animation: crossfadeOut 1.2s ease-in-out forwards;
+}
+
+/* 15. TYPING CURSOR (for journey status text) */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1.2s step-end infinite;
+}
+
+/* 16. SCROLL-REVEAL: uses IntersectionObserver via class toggle */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   DESTINATION STRIP / MARQUEE COMPONENT
+   ============================================================ */
+.destination-strip {
+  display: flex;
+  width: max-content;
+}
+
+.destination-strip-item {
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.destination-strip-item:hover {
+  z-index: 10;
+}
+
+.destination-strip-item:hover img {
+  transform: scale(1.08);
+}
+
+.destination-strip-item img {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ============================================================
+   GLASSMORPHISM HELPERS
+   ============================================================ */
+.glass-card {
+  background: rgba(255, 249, 243, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 35, 30, 0.12);
+}
+
+.glass-dark {
+  background: rgba(28, 20, 16, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 249, 243, 0.08);
+}
+
+/* ============================================================
+   UNIQUE HAND-CRAFTED ANIMATIONS — Non-AI, Pure CSS
+   ============================================================ */
+
+/* 17. COMPASS SPIN — Slow, majestic rotation for decorative compass */
+@keyframes compassSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-compass-spin {
+  animation: compassSpin 60s linear infinite;
+}
+
+/* 18. PAPER AIRPLANE FLIGHT PATH — Swooping arc across viewport */
+@keyframes flightPath {
+  0% {
+    transform: translate(-60px, 40px) rotate(-15deg) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  30% {
+    transform: translate(30vw, -20px) rotate(-5deg) scale(1);
+  }
+  60% {
+    transform: translate(60vw, 10px) rotate(5deg) scale(0.95);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(95vw, -30px) rotate(-10deg) scale(0.7);
+    opacity: 0;
+  }
+}
+
+.animate-flight-path {
+  animation: flightPath 20s ease-in-out infinite;
+  animation-delay: 3s;
+}
+
+/* 19. EMBER RISE — Particles drifting upward with gentle sway */
+@keyframes emberRise {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-45vh) translateX(var(--drift, 15px)) scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-90vh) translateX(calc(var(--drift, 15px) * -0.5)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.animate-ember-rise {
+  animation: emberRise var(--duration, 12s) ease-out infinite;
+}
+
+/* 20. PASSPORT STAMP APPEAR — Organic thunk-and-settle */
+@keyframes stampAppear {
+  0%, 70% {
+    opacity: 0;
+    transform: rotate(var(--rotation, -8deg)) scale(1.6);
+  }
+  75% {
+    opacity: 1;
+    transform: rotate(var(--rotation, -8deg)) scale(0.95);
+  }
+  80% {
+    transform: rotate(var(--rotation, -8deg)) scale(1.02);
+  }
+  85%, 95% {
+    opacity: 1;
+    transform: rotate(var(--rotation, -8deg)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--rotation, -8deg)) scale(1);
+  }
+}
+
+.animate-stamp-appear {
+  animation: stampAppear 10s ease-in-out infinite;
+  opacity: 0;
+}
+
+/* 21. DASH DRAW — Animated SVG stroke for flight path lines */
+@keyframes dashDraw {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1000;
+  }
+}
+
+.animate-dash-draw {
+  stroke-dasharray: 6 8;
+  stroke-dashoffset: 1000;
+  animation: dashDraw 12s linear infinite;
+}
+
+/* 22. MAGNETIC PULL — Subtle scale on cursor proximity (JS-driven class toggle) */
+.animate-magnetic-hover {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-magnetic-hover:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 20px 40px rgba(28, 20, 16, 0.1), 0 8px 16px rgba(143, 50, 31, 0.06);
+}
+
+/* 23. INK SPREAD — Radial spread for section transitions */
+@keyframes inkSpread {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+  }
+  100% {
+    clip-path: circle(100% at 50% 50%);
+    opacity: 1;
+  }
+}
+
+.animate-ink-spread {
+  animation: inkSpread 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* 24. WAVE UNDERLINE — Animated wavy underline for headings */
+@keyframes waveUnderline {
+  0% { background-position: 0 100%; }
+  100% { background-position: 200% 100%; }
+}
+
+.animate-wave-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='6' viewBox='0 0 40 6'%3E%3Cpath d='M0 3 Q 5 0 10 3 Q 15 6 20 3 Q 25 0 30 3 Q 35 6 40 3' stroke='%238F321F' stroke-width='1' fill='none' opacity='0.3'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 40px 6px;
+  background-position: 0 100%;
+  padding-bottom: 8px;
+  animation: waveUnderline 4s linear infinite;
+}
+
+/* ============================================================
+   DESTINATION SHOWCASE CARD SYSTEM
+   ============================================================ */
+.destination-showcase-card {
+  will-change: transform, opacity;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 2px 8px rgba(28, 20, 16, 0.06);
+}
+
+.destination-showcase-card:hover {
+  box-shadow: 0 16px 48px rgba(28, 20, 16, 0.15), 0 4px 12px rgba(143, 50, 31, 0.08);
+  z-index: 10;
+}
+
+/* Filter chip subtle bounce */
+.destination-filter-chip {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.destination-filter-chip:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================
+   HERO SECTION CINEMATIC ENHANCEMENTS
+   ============================================================ */
+
+/* 25. SLOW ZOOM PULSE — Breathes life into hero images */
+@keyframes heroBreath {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(0.98) contrast(1.02);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: brightness(1) contrast(1);
+  }
+}
+
+.animate-hero-breath {
+  animation: heroBreath 12s ease-in-out infinite;
+}
+
+/* 26. TEXT REVEAL WIPE — Left-to-right reveal for headlines */
+@keyframes revealWipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0% 0 0);
+  }
+}
+
+.animate-reveal-wipe {
+  animation: revealWipe 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.3s;
+  clip-path: inset(0 100% 0 0);
+}
+
+/* 27. STAGGER CHILDREN — Utility for cascading child reveals */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 500ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 600ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 700ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 800ms; }

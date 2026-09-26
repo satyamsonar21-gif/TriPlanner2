@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth/AuthContext';
 import { LayoutDashboard, Compass, CalendarCheck, Users, Store, ShieldAlert, DollarSign, BarChart3, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { env } from '@/config/env';
 
 export const OperatorLayout: React.FC = () => {
   const { user, role, loginAsDemoUser, logout } = useAuth();
@@ -48,12 +49,14 @@ export const OperatorLayout: React.FC = () => {
             <span className="font-mono text-[10px] uppercase text-stone-gray block">ACTIVE ROLE</span>
             <div className="flex items-center justify-between mt-1">
               <span className="font-semibold text-soft-ivory capitalize">{role}</span>
-              <button
-                onClick={() => loginAsDemoUser('traveler')}
-                className="font-mono text-[10px] text-antique-brass underline hover:text-soft-ivory"
-              >
-                Switch Role
-              </button>
+              {env.enableMockData && import.meta.env.DEV && (
+                <button
+                  onClick={() => loginAsDemoUser('traveler')}
+                  className="font-mono text-[10px] text-antique-brass underline hover:text-soft-ivory"
+                >
+                  Switch Role
+                </button>
+              )}
             </div>
           </div>
 

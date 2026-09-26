@@ -18,6 +18,7 @@ import { AuthCallbackPage } from '@/pages/auth/AuthCallbackPage';
 import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 import { TravelerDashboardPage } from '@/pages/traveler/TravelerDashboardPage';
 import { MyJourneysPage } from '@/pages/traveler/MyJourneysPage';
+import { JourneyDetailPage } from '@/pages/traveler/JourneyDetailPage';
 import { BookingsPage } from '@/pages/traveler/BookingsPage';
 import { SavedPage } from '@/pages/traveler/SavedPage';
 import { TravelerExplorePage } from '@/pages/traveler/TravelerExplorePage';
@@ -26,6 +27,7 @@ import { PaymentsPage } from '@/pages/traveler/PaymentsPage';
 import { NotificationsPage } from '@/pages/traveler/NotificationsPage';
 import { SupportPage } from '@/pages/traveler/SupportPage';
 import { OperatorDashboardPage } from '@/pages/operator/OperatorDashboardPage';
+import { OperatorChangeCenterPage } from '@/pages/operator/OperatorChangeCenterPage';
 import { VendorDashboardPage } from '@/pages/vendor/VendorDashboardPage';
 import { PlaceholderPage } from '@/pages/common/PlaceholderPage';
 
@@ -99,7 +101,7 @@ export const AppRoutes: React.FC = () => {
       >
         <Route path="/dashboard" element={<TravelerDashboardPage />} />
         <Route path="/journeys" element={<MyJourneysPage />} />
-        <Route path="/journeys/:id" element={<MyJourneysPage />} />
+        <Route path="/journeys/:id" element={<JourneyDetailPage />} />
         <Route path="/bookings" element={<BookingsPage />} />
         <Route path="/saved" element={<SavedPage />} />
         <Route path="/explore-destinations" element={<TravelerExplorePage />} />
@@ -168,11 +170,11 @@ export const AppRoutes: React.FC = () => {
         />
         <Route
           path="/operator/operations"
-          element={<PlaceholderPage title="Operational Conflict Monitoring" domain="journey-engine" />}
+          element={<OperatorChangeCenterPage />}
         />
         <Route
           path="/operator/changes"
-          element={<PlaceholderPage title="Disruption Change Center" domain="changes" />}
+          element={<OperatorChangeCenterPage />}
         />
         <Route
           path="/operator/payments"

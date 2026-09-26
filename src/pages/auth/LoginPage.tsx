@@ -92,8 +92,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
     }
 
     setSuccessMessage(`Account created! Welcome to Triplanner, ${fullName}.`);
-    // In mock/demo mode or after signup, assign selected role & navigate to dashboard
-    loginAsDemoUser(selectedRole);
     setTimeout(() => {
       navigateToRoleDashboard(selectedRole);
     }, 600);
@@ -274,7 +272,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Ananya Sharma"
+                    placeholder="Satyam Sonar"
                     className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#33231E]/20 rounded-lg text-[#1C1410] text-sm placeholder:text-[#8A7B75]/60 focus:outline-none focus:ring-1 focus:ring-terracotta focus:border-terracotta transition-colors"
                     disabled={isSubmitting}
                   />
@@ -292,7 +290,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ananya.sharma@example.com"
+                    placeholder="satyam.sonar@example.com"
                     className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#33231E]/20 rounded-lg text-[#1C1410] text-sm placeholder:text-[#8A7B75]/60 focus:outline-none focus:ring-1 focus:ring-terracotta focus:border-terracotta transition-colors"
                     disabled={isSubmitting}
                   />
@@ -433,7 +431,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
                   <Compass className="w-3 h-3 text-terracotta" />
                   <span className="font-semibold text-xs text-[#1C1410]">Traveler</span>
                 </div>
-                <span className="text-[9px] text-[#8A7B75] truncate">Ananya S.</span>
+                <span className="text-[9px] text-[#8A7B75] truncate">Satyam S.</span>
               </button>
 
               <button

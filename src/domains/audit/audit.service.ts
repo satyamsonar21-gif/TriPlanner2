@@ -22,14 +22,18 @@ export class AuditService {
       timestamp: new Date().toISOString(),
     };
 
-    this.logs.unshift(log);
-    if (import.meta.env.DEV) {
-      console.info('[Audit Log Event]:', log);
+    const frozenLog = Object.freeze(structuredClone(log));
+    this.logs.unshift(frozenLog);
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
+    if (metaEnv?.DEV) {
+      console.info('[Audit Log Event]:', frozenLog);
     }
-    return log;
+    return structuredClone(frozenLog);
   }
 
   public static async getLogsForEntity(entityId: string): Promise<AuditLog[]> {
-    return this.logs.filter((l) => l.entity_id === entityId);
+    return this.logs
+      .filter((l) => l.entity_id === entityId)
+      .map((l) => structuredClone(l));
   }
 }

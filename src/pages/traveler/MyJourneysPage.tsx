@@ -47,16 +47,18 @@ export const MyJourneysPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link to="/explore-destinations">
-            <button className="px-4 py-2 rounded-lg bg-transparent border border-[#33231E]/20 hover:bg-[#33231E]/5 text-[#33231E] text-xs font-medium transition-colors">
-              Explore Destinations
-            </button>
+          <Link
+            to="/explore-destinations"
+            className="px-4 py-2 rounded-lg bg-transparent border border-[#33231E]/20 hover:bg-[#33231E]/5 text-[#33231E] text-xs font-medium transition-colors"
+          >
+            Explore Destinations
           </Link>
-          <Link to="/plan">
-            <button className="px-4 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Create New Journey</span>
-            </button>
+          <Link
+            to="/plan"
+            className="px-4 py-2 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Create New Journey</span>
           </Link>
         </div>
       </div>
@@ -177,15 +179,17 @@ export const MyJourneysPage: React.FC = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-3 pt-3 border-t border-[#33231E]/10">
-                <Link to="/journeys/jrn_goa_01" className="flex-1">
-                  <button className="w-full py-2.5 px-4 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs">
-                    View Journey Blueprint
-                  </button>
+                <Link
+                  to="/journeys/jrn_goa_01"
+                  className="flex-1 text-center py-2.5 px-4 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors shadow-2xs"
+                >
+                  View Journey Blueprint
                 </Link>
-                <Link to="/bookings" className="flex-1">
-                  <button className="w-full py-2.5 px-4 rounded-lg border border-[#33231E]/20 hover:bg-[#33231E]/5 text-[#33231E] text-xs font-medium transition-colors">
-                    Manage Bookings ({featuredJourney.bookings_count})
-                  </button>
+                <Link
+                  to="/bookings"
+                  className="flex-1 text-center py-2.5 px-4 rounded-lg border border-[#33231E]/20 hover:bg-[#33231E]/5 text-[#33231E] text-xs font-medium transition-colors"
+                >
+                  Manage Bookings ({featuredJourney.bookings_count})
                 </Link>
               </div>
             </div>
@@ -342,15 +346,17 @@ export const MyJourneysPage: React.FC = () => {
 
                   {/* Actions */}
                   <div className="pt-3 border-t border-[#33231E]/10 flex items-center gap-2">
-                    <Link to={`/journeys/${journey.id}`} className="flex-1">
-                      <button className="w-full py-1.5 px-3 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors">
-                        View Journey
-                      </button>
+                    <Link
+                      to={`/journeys/${journey.id}`}
+                      className="flex-1 text-center py-1.5 px-3 rounded-lg bg-terracotta hover:bg-terracotta-hover text-white text-xs font-medium transition-colors"
+                    >
+                      View Journey
                     </Link>
-                    <Link to="/bookings">
-                      <button className="py-1.5 px-3 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors">
-                        Manage
-                      </button>
+                    <Link
+                      to="/bookings"
+                      className="py-1.5 px-3 rounded-lg border border-[#33231E]/20 text-xs font-medium text-[#33231E] hover:bg-[#33231E]/5 transition-colors"
+                    >
+                      Manage
                     </Link>
                   </div>
                 </div>
@@ -365,10 +371,11 @@ export const MyJourneysPage: React.FC = () => {
             <p className="text-xs text-[#8A7B75] max-w-sm mx-auto">
               Your next great journey starts here. Build an itinerary tailored around your pace and preferences.
             </p>
-            <Link to="/plan" className="inline-block pt-2">
-              <button className="px-5 py-2 rounded-lg bg-terracotta text-white text-xs font-medium">
-                Create New Journey
-              </button>
+            <Link
+              to="/plan"
+              className="inline-block mt-2 px-5 py-2 rounded-lg bg-terracotta text-white text-xs font-medium hover:bg-terracotta-hover transition-colors"
+            >
+              Create New Journey
             </Link>
           </div>
         )}

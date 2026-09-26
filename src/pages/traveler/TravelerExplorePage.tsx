@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/core/auth/AuthContext';
 import {
   Search,
   SlidersHorizontal,
@@ -10,6 +11,7 @@ import { DestinationService } from '@/domains/destinations/destination.service';
 import type { Destination } from '@/types/database.types';
 
 export const TravelerExplorePage: React.FC = () => {
+  const { user } = useAuth();
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string>('all');
@@ -103,8 +105,8 @@ export const TravelerExplorePage: React.FC = () => {
             <h3 className="font-display text-base font-semibold text-[#1C1410]">
               Because you love Adventure + Food
             </h3>
-            <span className="text-[10px] font-mono bg-terracotta/10 text-terracotta px-2 py-0.5 rounded font-semibold hidden sm:inline">
-              ANANYA&apos;S PROFILE MATCH
+            <span className="text-[10px] font-mono bg-terracotta/10 text-terracotta px-2 py-0.5 rounded font-semibold hidden sm:inline uppercase">
+              {user?.display_name || user?.full_name ? `${user.display_name || user.full_name}'S PROFILE MATCH` : 'YOUR PROFILE MATCH'}
             </span>
           </div>
           <Link to="/preferences" className="text-xs font-mono text-terracotta hover:underline">

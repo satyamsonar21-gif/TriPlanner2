@@ -22,9 +22,10 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { MOCK_TRAVELER_PROFILE } from '@/domains/traveler/traveler.data';
+import { env } from '@/config/env';
 
 export const TravelerLayout: React.FC = () => {
-  const { loginAsDemoUser, logout } = useAuth();
+  const { user, loginAsDemoUser, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -126,13 +127,11 @@ export const TravelerLayout: React.FC = () => {
             <p className="text-[10px] text-[#8A7B75] leading-relaxed mb-3">
               Get personalized recommendations and real-time journey updates.
             </p>
-            <Link to="/plan" className="block relative z-10">
-              <button
-                type="button"
-                className="w-full py-1.5 px-3 rounded-md bg-terracotta hover:bg-terracotta-hover text-white text-[11px] font-medium transition-colors shadow-xs"
-              >
-                Create New Journey
-              </button>
+            <Link
+              to="/plan"
+              className="block relative z-10 w-full py-1.5 px-3 rounded-md bg-terracotta hover:bg-terracotta-hover text-white text-[11px] font-medium transition-colors shadow-xs text-center"
+            >
+              Create New Journey
             </Link>
 
             {/* Faint Architectural Skyline Texture */}
@@ -157,7 +156,7 @@ export const TravelerLayout: React.FC = () => {
                   TripPlanner Premium
                 </span>
                 <span className="text-[9px] text-[#8A7B75] block mt-0.5">
-                  Valid till 12 Dec 2025
+                  Valid till 12 Dec 2026
                 </span>
               </div>
             </div>
@@ -229,10 +228,12 @@ export const TravelerLayout: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-espresso/15">
-              <Link to="/plan" onClick={() => setMobileSidebarOpen(false)} className="block w-full">
-                <button className="w-full py-2 bg-terracotta text-white rounded-md text-xs font-medium">
-                  Create New Journey
-                </button>
+              <Link
+                to="/plan"
+                onClick={() => setMobileSidebarOpen(false)}
+                className="block w-full py-2 bg-terracotta text-white rounded-md text-xs font-medium text-center"
+              >
+                Create New Journey
               </Link>
             </div>
           </div>
@@ -308,17 +309,23 @@ export const TravelerLayout: React.FC = () => {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="flex items-center gap-2.5 p-1 rounded-full hover:bg-[#33231E]/5 transition-colors focus:outline-none"
               >
-                <img
-                  src={MOCK_TRAVELER_PROFILE.avatar}
-                  alt={MOCK_TRAVELER_PROFILE.name}
-                  className="w-8 h-8 rounded-full border border-terracotta/30 object-cover shadow-2xs"
-                />
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.full_name || 'Satyam Sonar'}
+                    className="w-8 h-8 rounded-full border border-terracotta/30 object-cover shadow-2xs"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-terracotta text-white flex items-center justify-center font-display font-semibold text-xs border border-terracotta/30 shadow-2xs">
+                    {((user?.full_name || user?.display_name || 'Satyam').charAt(0)).toUpperCase()}
+                  </div>
+                )}
                 <div className="hidden md:block text-left pr-1">
                   <span className="font-semibold text-xs text-[#1C1410] block leading-tight">
-                    {MOCK_TRAVELER_PROFILE.name}
+                    {user?.full_name || user?.display_name || MOCK_TRAVELER_PROFILE.name}
                   </span>
-                  <span className="text-[10px] text-[#8A7B75] block leading-tight">
-                    {MOCK_TRAVELER_PROFILE.role}
+                  <span className="text-[10px] text-[#8A7B75] block leading-tight capitalize">
+                    {user?.role || 'Traveler'}
                   </span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-[#8A7B75] hidden md:block" />
@@ -331,10 +338,14 @@ export const TravelerLayout: React.FC = () => {
                   onClick={() => setProfileDropdownOpen(false)}
                 >
                   <div className="px-3 py-2 border-b border-[#33231E]/10">
-                    <p className="font-semibold text-xs text-[#1C1410]">{MOCK_TRAVELER_PROFILE.name}</p>
-                    <p className="text-[10px] text-[#8A7B75] truncate">{MOCK_TRAVELER_PROFILE.email}</p>
-                    <span className="inline-block mt-1 font-mono text-[9px] bg-terracotta/10 text-terracotta px-1.5 py-0.5 rounded font-semibold">
-                      PREMIUM TRAVELER
+                    <p className="font-semibold text-xs text-[#1C1410]">
+                      {user?.full_name || user?.display_name || MOCK_TRAVELER_PROFILE.name}
+                    </p>
+                    <p className="text-[10px] text-[#8A7B75] truncate">
+                      {user?.email || MOCK_TRAVELER_PROFILE.email}
+                    </p>
+                    <span className="inline-block mt-1 font-mono text-[9px] bg-terracotta/10 text-terracotta px-1.5 py-0.5 rounded font-semibold uppercase">
+                      {user?.role || 'TRAVELER'}
                     </span>
                   </div>
 
@@ -353,14 +364,16 @@ export const TravelerLayout: React.FC = () => {
                       <Wallet className="w-3.5 h-3.5 text-stone-gray" />
                       Payments & Invoices
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => loginAsDemoUser('operator')}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#33231E]/5 text-terracotta rounded-md transition-colors text-left"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      Switch to Demo Operator
-                    </button>
+                    {env.enableMockData && import.meta.env.DEV && (
+                      <button
+                        type="button"
+                        onClick={() => loginAsDemoUser('operator')}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#33231E]/5 text-terracotta rounded-md transition-colors text-left"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>Switch to Demo Operator</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="pt-1 border-t border-[#33231E]/10">
