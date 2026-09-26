@@ -20,6 +20,7 @@ import {
   X,
   LogOut,
   UserCheck,
+  Bot,
 } from 'lucide-react';
 import { MOCK_TRAVELER_PROFILE } from '@/domains/traveler/traveler.data';
 import { env } from '@/config/env';
@@ -57,7 +58,7 @@ export const TravelerLayout: React.FC = () => {
     { to: '/bookings', label: 'Bookings', icon: Ticket },
     { to: '/saved', label: 'Saved', icon: Heart },
     { to: '/explore-destinations', label: 'Explore Destinations', icon: Globe },
-    { to: '/preferences', label: 'Preferences', icon: Sliders },
+    { to: '/preferences', label: 'AI Travel Agent', icon: Bot, badge: 'AI' },
     { to: '/payments', label: 'Payments', icon: Wallet },
     { to: '/notifications', label: 'Notifications', icon: Bell, badge: 3 },
     { to: '/support', label: 'Support', icon: HelpCircle },
@@ -106,7 +107,7 @@ export const TravelerLayout: React.FC = () => {
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="w-4 h-4 rounded-full bg-terracotta text-soft-ivory text-[9px] font-bold flex items-center justify-center font-mono">
+                    <span className="min-w-4 h-4 px-1.5 rounded-full bg-terracotta text-soft-ivory text-[9px] font-bold flex items-center justify-center font-mono">
                       {item.badge}
                     </span>
                   )}
@@ -217,7 +218,7 @@ export const TravelerLayout: React.FC = () => {
                         <span>{item.label}</span>
                       </div>
                       {item.badge && (
-                        <span className="w-4 h-4 rounded-full bg-terracotta text-soft-ivory text-[9px] font-bold flex items-center justify-center font-mono">
+                        <span className="min-w-4 h-4 px-1.5 rounded-full bg-terracotta text-soft-ivory text-[9px] font-bold flex items-center justify-center font-mono">
                           {item.badge}
                         </span>
                       )}

@@ -1,6 +1,10 @@
 import type { UserRole } from '@/types/database.types';
 import { DEMO_LOCATION_FIXTURES, normalizeGeoLocation } from '@/domains/geo';
 import { AuditService } from '@/domains/audit/audit.service';
+import {
+  buildAlternativeExplanationBundle,
+  buildImpactExplanationBundle,
+} from '@/domains/ai/explanation-engine';
 import { ImpactAnalyzer } from './impact-analyzer';
 import {
   AlternativeEngine,
@@ -577,6 +581,9 @@ export class LivingJourneyEngine
         snapshot,
         disruptedItemId: trigger.affectedItemId,
         candidates: customCandidates || CANDIDATE_INVENTORY_CATALOG,
+        protectedItemIds: trigger.protectedItemIds,
+        budgetPolicy: trigger.budgetPolicy,
+        preferredTags: trigger.preferredTags,
       });
 
       changeRequest.scoredAlternatives = altOutput.validAlternatives;
@@ -1296,15 +1303,38 @@ export class LivingJourneyEngine
   public async summarizeChangeImpact(
     impact: ImpactAnalysisResult
   ): Promise<string> {
+    const snap = this.snapshotsByJourneyId.get(impact.journeyId);
+    const cr = this.changeRequestsById.get(impact.changeRequestId);
+    if (snap) {
+      const bundle = buildImpactExplanationBundle({
+        impact,
+        snapshot: snap,
+        validAlternativesCount: cr?.scoredAlternatives.length || 0,
+        rejectedCandidatesCount: cr?.rejectedCandidates.length || 0,
+      });
+      return bundle.shortExplanation;
+    }
     return `[Deterministic Engine Summary]: ${impact.dimensions.DIRECT.explanation} (${impact.downstreamItemIds.length} downstream items evaluated; overall severity: ${impact.overallSeverity}).`;
   }
 
   public async enhanceAlternativeExplanations(
     validAlternatives: ScoredAlternative[],
-    _snapshot: JourneySnapshot
+    snapshot: JourneySnapshot
   ): Promise<ScoredAlternative[]> {
     // AI boundary never introduces unvalidated candidates or mutates scores/constraints
-    return structuredClone(validAlternatives);
+    return validAlternatives.map((alt) => {
+      const bundle = buildAlternativeExplanationBundle({
+        alternative: alt,
+        snapshot,
+      });
+      return {
+        ...structuredClone(alt),
+        explanationReasons: [
+          bundle.shortExplanation,
+          ...alt.explanationReasons,
+        ],
+      };
+    });
   }
 
   // ==========================================================================

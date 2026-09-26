@@ -305,6 +305,9 @@ export interface ChangeTriggerInput {
   newTotalBudget?: number;
   newPartySize?: number;
   newStyles?: string[];
+  protectedItemIds?: string[];
+  budgetPolicy?: 'NO_INCREASE' | 'STRICT_CAP' | 'FLEXIBLE';
+  preferredTags?: string[];
   replacementCandidateId?: string;
   requiresApproval?: boolean;
   expiresAtIso?: string;

@@ -288,12 +288,35 @@ export class AlternativeEngine {
     snapshot: JourneySnapshot;
     disruptedItemId: string;
     candidates?: CandidateActivity[];
+    protectedItemIds?: string[];
+    budgetPolicy?: 'NO_INCREASE' | 'STRICT_CAP' | 'FLEXIBLE';
+    preferredTags?: string[];
   }): AlternativeGenerationOutput {
     const {
-      snapshot,
+      snapshot: rawSnapshot,
       disruptedItemId,
       candidates = CANDIDATE_INVENTORY_CATALOG,
+      protectedItemIds = [],
+      budgetPolicy,
+      preferredTags = [],
     } = params;
+
+    // Apply protectedItemIds and preferredTags onto a working copy of snapshot
+    const snapshot: JourneySnapshot =
+      protectedItemIds.length > 0 || preferredTags.length > 0
+        ? {
+            ...structuredClone(rawSnapshot),
+            travelStyles:
+              preferredTags.length > 0
+                ? Array.from(new Set([...preferredTags, ...rawSnapshot.travelStyles]))
+                : rawSnapshot.travelStyles,
+            items: rawSnapshot.items.map((item) =>
+              protectedItemIds.includes(item.id)
+                ? { ...structuredClone(item), isLocked: true }
+                : structuredClone(item)
+            ),
+          }
+        : rawSnapshot;
 
     const disruptedItem = snapshot.items.find((i) => i.id === disruptedItemId);
     if (!disruptedItem) {
@@ -323,6 +346,28 @@ export class AlternativeEngine {
         : undefined;
 
     for (const candidate of candidates) {
+      if (
+        budgetPolicy === 'NO_INCREASE' &&
+        candidate.priceAmount > disruptedItem.price
+      ) {
+        rejectedCandidates.push({
+          candidateId: candidate.id,
+          title: candidate.title,
+          rejectionReasons: [
+            {
+              category: 'BUDGET',
+              code: 'BUDGET_HARD_CAP_EXCEEDED',
+              severity: 'HIGH',
+              isHardConstraint: true,
+              itemId: candidate.id,
+              itemTitle: candidate.title,
+              explanation: `Candidate "${candidate.title}" (₹${candidate.priceAmount.toLocaleString()}) exceeds the replaced item cost (₹${disruptedItem.price.toLocaleString()}) under explicit NO_INCREASE budget policy.`,
+            },
+          ],
+        });
+        continue;
+      }
+
       const proposedStartIso =
         candidate.availableWindowStartIso || disruptedItem.startTimeIso;
       const proposedEndIso =
@@ -346,6 +391,31 @@ export class AlternativeEngine {
           candidateId: candidate.id,
           title: candidate.title,
           rejectionReasons: evaluation.violations,
+        });
+        continue;
+      }
+
+      if (
+        nextItem &&
+        evaluation.requiredNextStopShiftMinutes > 0 &&
+        protectedItemIds.includes(nextItem.id)
+      ) {
+        rejectedCandidates.push({
+          candidateId: candidate.id,
+          title: candidate.title,
+          rejectionReasons: [
+            {
+              category: 'BOOKING_LOCK',
+              code: 'LOCKED_BOOKING_CONFLICT',
+              severity: 'CRITICAL',
+              isHardConstraint: true,
+              itemId: candidate.id,
+              itemTitle: candidate.title,
+              relatedItemId: nextItem.id,
+              relatedItemTitle: nextItem.title,
+              explanation: `Candidate "${candidate.title}" would shift protected item "${nextItem.title}" by +${evaluation.requiredNextStopShiftMinutes} min, violating explicit preserve constraint.`,
+            },
+          ],
         });
         continue;
       }

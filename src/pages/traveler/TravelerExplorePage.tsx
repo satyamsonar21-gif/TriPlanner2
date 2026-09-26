@@ -109,8 +109,9 @@ export const TravelerExplorePage: React.FC = () => {
               {user?.display_name || user?.full_name ? `${user.display_name || user.full_name}'S PROFILE MATCH` : 'YOUR PROFILE MATCH'}
             </span>
           </div>
-          <Link to="/preferences" className="text-xs font-mono text-terracotta hover:underline">
-            Adjust Preferences
+          <Link to="/preferences" className="text-xs font-mono text-terracotta hover:underline flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            <span>Ask AI Travel Agent</span>
           </Link>
         </div>
 

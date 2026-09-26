@@ -106,6 +106,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/saved" element={<SavedPage />} />
         <Route path="/explore-destinations" element={<TravelerExplorePage />} />
         <Route path="/preferences" element={<PreferencesPage />} />
+        <Route path="/agent" element={<PreferencesPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/support" element={<SupportPage />} />
