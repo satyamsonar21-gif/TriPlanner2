@@ -73,7 +73,7 @@ const ADVERSARIAL_INJECTION_RULES: InjectionRule[] = [
     id: 'INJ_BYPASS_APPROVAL_OR_BUDGET',
     category: 'PROMPT_INJECTION_BLOCKED',
     pattern:
-      /\b(developer\s+says\s+bypass\s+approval|skip\s+approval|bypass\s+human\s+approval|force\s+apply|without\s+approval|commit\s+to\s+database|override\s+the\s+budget\s+cap|ignore\s+(the\s+)?budget\s+constraints?|ignore\s+all\s+constraints)\b/i,
+      /\b(developer\s+says\s+bypass\s+approval|skip\s+approval|bypass\s+human\s+approval|force\s+apply|without\s+approval|commit\s+to\s+database|override\s+(?:the\s+)?budget\s+cap|ignore\s+(the\s+)?budget\s+constraints?|ignore\s+all\s+constraints)\b/i,
     refusalMessage:
       'Deterministic budget caps, constraint validation, and human approval requirements cannot be bypassed through conversation.',
   },

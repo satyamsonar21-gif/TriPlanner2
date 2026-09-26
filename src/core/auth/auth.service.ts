@@ -97,7 +97,8 @@ export class AuthService {
   public static async signUpWithPassword(
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    originCity?: string
   ): Promise<AuthResponse<{ userId: string; emailVerificationRequired: boolean }>> {
     try {
       if (!email || !password || !fullName) {
@@ -132,6 +133,7 @@ export class AuthService {
               email: email.trim(),
               password,
               fullName: fullName.trim(),
+              originCity: originCity?.trim() || null,
             }),
           });
           if (regRes.ok) {
@@ -162,6 +164,7 @@ export class AuthService {
           options: {
             data: {
               full_name: fullName.trim(),
+              origin_city: originCity?.trim() || null,
             },
             emailRedirectTo: redirectUrl,
           },
@@ -208,6 +211,7 @@ export class AuthService {
         status: 'active',
         organization_id: null,
         onboarding_completed: false,
+        origin_city: originCity?.trim() || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

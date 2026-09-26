@@ -29,6 +29,7 @@ export interface Profile {
   status: AccountStatus;
   organization_id?: string | null;
   onboarding_completed: boolean;
+  origin_city?: string | null;
   created_at: string;
   updated_at: string;
 }

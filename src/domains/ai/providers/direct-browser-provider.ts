@@ -1,4 +1,3 @@
-import { env } from '@/config/env';
 import type {
   AIProvider,
   ProviderExecutionResult,
@@ -11,7 +10,7 @@ export class GeminiDirectBrowserProvider implements AIProvider {
   private readonly apiKey: string;
 
   constructor(options?: { apiKey?: string; modelName?: string }) {
-    this.apiKey = options?.apiKey ?? env.geminiApiKey;
+    this.apiKey = options?.apiKey ?? '';
     this.modelName = options?.modelName ?? 'gemini-2.5-flash';
   }
 
@@ -22,7 +21,7 @@ export class GeminiDirectBrowserProvider implements AIProvider {
         provider: this.providerName,
         model: this.modelName,
         mode: 'browser-direct',
-        reason: 'Client-side VITE_GEMINI_API_KEY is missing.',
+        reason: 'Direct client-side Gemini API key is not configured; server-side Edge Function provider recommended.',
       };
     }
     return {

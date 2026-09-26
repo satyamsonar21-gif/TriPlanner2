@@ -17,7 +17,7 @@ export interface AuthContextType {
   authError: FormattedAuthError | null;
   clearAuthError: () => void;
   // Actions
-  signUp: (email: string, password: string, fullName: string) => Promise<AuthResponse<{ userId: string; emailVerificationRequired: boolean }>>;
+  signUp: (email: string, password: string, fullName: string, originCity?: string) => Promise<AuthResponse<{ userId: string; emailVerificationRequired: boolean }>>;
   signIn: (email: string, password: string) => Promise<AuthResponse<{ userId: string }>>;
   signInWithGoogle: (redirectTo?: string) => Promise<AuthResponse<{ url?: string }>>;
   signOut: () => Promise<void>;
@@ -217,10 +217,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [syncProfile]);
 
   // Auth Operations
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, originCity?: string) => {
     setAuthError(null);
     localStorage.setItem('triplanner_pending_name', fullName);
-    const res = await AuthService.signUpWithPassword(email, password, fullName);
+    const res = await AuthService.signUpWithPassword(email, password, fullName, originCity);
     if (res.error) {
       setAuthError(res.error);
     } else if (res.data?.userId && !res.data.emailVerificationRequired) {

@@ -22,6 +22,7 @@ export interface ChatMessage {
 
 export interface AgentContext {
   activeDestination?: string;
+  userOriginCity?: string;
   userPace: 'Relaxed' | 'Balanced' | 'Packed';
   userBudget: number;
   userStyles: string[];

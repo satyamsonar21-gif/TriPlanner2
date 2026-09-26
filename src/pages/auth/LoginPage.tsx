@@ -30,6 +30,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [originCity, setOriginCity] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('traveler');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
     }
 
     setIsSubmitting(true);
-    const res = await signUp(email, password, fullName);
+    const res = await signUp(email, password, fullName, originCity);
 
     if (res.error) {
       setIsSubmitting(false);
@@ -346,6 +347,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Satyam Sonar"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#33231E]/20 rounded-lg text-[#1C1410] text-sm placeholder:text-[#8A7B75]/60 focus:outline-none focus:ring-1 focus:ring-terracotta focus:border-terracotta transition-colors"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase tracking-wider text-[#8A7B75] mb-1.5 font-medium">
+                  Origin City (Home)
+                </label>
+                <div className="relative">
+                  <Compass className="w-4 h-4 text-[#8A7B75] absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    required
+                    value={originCity}
+                    onChange={(e) => setOriginCity(e.target.value)}
+                    placeholder="e.g. Shirpur, Maharashtra, India"
                     className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#33231E]/20 rounded-lg text-[#1C1410] text-sm placeholder:text-[#8A7B75]/60 focus:outline-none focus:ring-1 focus:ring-terracotta focus:border-terracotta transition-colors"
                     disabled={isSubmitting}
                   />

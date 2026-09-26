@@ -1,4 +1,3 @@
-import { env } from '@/config/env';
 import type {
   EngineChangeRequest,
   FullSimulationOutput,
@@ -470,7 +469,7 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
 
     const { contextSummary, neutralizedDirectivesCount } =
       this.buildBoundedJourneyContext({
-        snapshot: rawSnapshot,
+        snapshot: rawSnapshot ?? undefined,
         changeRequest: activeChangeReq,
         untrustedExternalContext: request.untrustedExternalContext,
       });
@@ -678,7 +677,7 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
     // 10. Extract Intent, Preferences, and Preserve Constraints on Authoritative Snapshot
     const extraction = extractIntentAndPreferences({
       userMessage: promptSecurity.sanitizedMessage,
-      snapshot: rawSnapshot,
+      snapshot: rawSnapshot ?? undefined,
     });
 
     const resolvedIntent =
@@ -690,7 +689,7 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
     // 11. Check for Hallucination Temptation / Unverified External Queries (Section 14, 37, 76)
     const unverifiedQueryMatch = this.detectUnverifiedFactQuery(
       promptSecurity.sanitizedMessage,
-      rawSnapshot
+      rawSnapshot ?? undefined
     );
     if (unverifiedQueryMatch.shouldAbstain) {
       return this.buildControlledResponse({

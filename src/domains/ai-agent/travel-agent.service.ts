@@ -21,7 +21,17 @@ export class TravelAgentService {
   });
 
   public static getContext(): AgentContext {
-    return { ...this.context };
+    let originCity = undefined;
+    try {
+      const stored = localStorage.getItem('triplanner_active_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.origin_city) {
+          originCity = parsed.origin_city;
+        }
+      }
+    } catch {}
+    return { ...this.context, userOriginCity: originCity };
   }
 
   public static updateContext(updates: Partial<AgentContext>): AgentContext {
@@ -40,6 +50,11 @@ export class TravelAgentService {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     try {
+      const ctx = this.getContext();
+      const originContext = ctx.userOriginCity 
+        ? { 'Origin City': ctx.userOriginCity, 'Budget Instruction': `Manage everything (hotel, travels, ghumna firna) under my budget of ${ctx.userBudget} starting from ${ctx.userOriginCity}` }
+        : undefined;
+
       const response = await this.orchestrator.processRequest({
         operationType: 'traveler_assistant',
         sessionActor: {
@@ -47,6 +62,7 @@ export class TravelAgentService {
           actorRole: 'traveler',
         },
         userMessage: userPrompt,
+        untrustedExternalContext: originContext,
       });
 
       let content = response.message;
