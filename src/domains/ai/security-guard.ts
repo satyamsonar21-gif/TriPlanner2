@@ -41,7 +41,7 @@ const ADVERSARIAL_INJECTION_RULES: InjectionRule[] = [
     id: 'INJ_SECRET_OR_PROMPT_EXFILTRATION',
     category: 'PROMPT_INJECTION_BLOCKED',
     pattern:
-      /\b(reveal\s+(your\s+)?(api\s+key|secret\s+key|system\s+prompt)|tell\s+me\s+the\s+(gemini|supabase|service[_\s-]?role)\s+(api\s+)?key|show\s+(your\s+)?hidden\s+instructions|print\s+env\s+variables)\b/i,
+      /\b(reveal\s+(your\s+)?(api\s+key|secret\s+key|system\s+prompt)|tell\s+me\s+the\s+(gemini|supabase|service[_\s-]?role)\s+(api\s+)?key|show\s+(your\s+)?hidden\s+instructions|print\s+(?:env\s+variables|.*(?:api|secret)_key|.*key))\b/i,
     refusalMessage:
       'I cannot disclose API keys, server credentials, or internal system instructions.',
   },
@@ -65,7 +65,7 @@ const ADVERSARIAL_INJECTION_RULES: InjectionRule[] = [
     id: 'INJ_CROSS_TENANT_OR_OTHER_USER_DATA',
     category: 'CROSS_TENANT_DENIED',
     pattern:
-      /\b(change\s+another\s+(user'?s|traveler'?s|customer'?s)\s+journey|give\s+me\s+another\s+(customer'?s|traveler'?s|user'?s)\s+(booking|journey|profile)|show\s+all\s+customers'\s+bookings)\b/i,
+      /\b(change\s+another\s+(user'?s|traveler'?s|customer'?s)\s+journey|give\s+me\s+another\s+(customer'?s|traveler'?s|user'?s)\s+(booking|journey|profile)|show\s+(me\s+)?(all\s+)?(other\s+)?(users'|customers'|travelers'|all)\s*(journeys?|bookings?|operator\s+notes)|show\s+all\s+customers'\s+bookings)\b/i,
     refusalMessage:
       'Access denied. You may only access journeys and bookings authorized for your authenticated account and organization.',
   },
@@ -73,7 +73,7 @@ const ADVERSARIAL_INJECTION_RULES: InjectionRule[] = [
     id: 'INJ_BYPASS_APPROVAL_OR_BUDGET',
     category: 'PROMPT_INJECTION_BLOCKED',
     pattern:
-      /\b(developer\s+says\s+bypass\s+approval|skip\s+approval|bypass\s+human\s+approval|override\s+the\s+budget\s+cap|ignore\s+(the\s+)?budget\s+constraints?|ignore\s+all\s+constraints)\b/i,
+      /\b(developer\s+says\s+bypass\s+approval|skip\s+approval|bypass\s+human\s+approval|force\s+apply|without\s+approval|commit\s+to\s+database|override\s+the\s+budget\s+cap|ignore\s+(the\s+)?budget\s+constraints?|ignore\s+all\s+constraints)\b/i,
     refusalMessage:
       'Deterministic budget caps, constraint validation, and human approval requirements cannot be bypassed through conversation.',
   },
@@ -167,6 +167,8 @@ export function sanitizeUntrustedExternalText(rawText: string): {
     /system\s+instruction\s*:/gi,
     /bypass\s+approval/gi,
     /ignore\s+all\s+constraints/gi,
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    /<[^>]+>/gi,
   ];
 
   for (const pattern of embeddedDirectivePatterns) {

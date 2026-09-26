@@ -727,8 +727,8 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
           slug: matched.slug,
           country: matched.country,
           averageDailyBudget: matched.average_daily_budget,
-          bestTimeToVisit: matched.best_time_to_visit,
-          tags: matched.tags,
+          bestTimeToVisit: matched.best_season || 'Year-round',
+          tags: matched.styles || [],
         },
         summary: `Loaded destination context for ${matched.name} (avg daily budget ₹${matched.average_daily_budget.toLocaleString()}).`,
         facts: [],
@@ -928,11 +928,11 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
           version: snapshot.version,
           valid: evaluation.valid,
           hardViolationsCount: evaluation.hardViolations.length,
-          softWarningsCount: evaluation.softWarnings.length,
+          softWarningsCount: evaluation.softViolations.length,
           hardViolations: evaluation.hardViolations,
-          softWarnings: evaluation.softWarnings,
+          softWarnings: evaluation.softViolations,
         },
-        summary: `Constraint evaluation for ${snapshot.journeyId} (v${snapshot.version}): ${evaluation.hardViolations.length} hard violation(s), ${evaluation.softWarnings.length} soft warning(s).`,
+        summary: `Constraint evaluation for ${snapshot.journeyId} (v${snapshot.version}): ${evaluation.hardViolations.length} hard violation(s), ${evaluation.softViolations.length} soft warning(s).`,
         facts: buildJourneyGroundedFacts({ snapshot }),
       };
     },
@@ -1109,6 +1109,32 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
           journeyId: applyResult.updatedSnapshot.journeyId,
           version: applyResult.updatedSnapshot.version,
           allocatedCost: applyResult.updatedSnapshot.allocatedCost,
+          stops: applyResult.updatedSnapshot.items.map((item) => ({
+            id: item.id,
+            journeyId: item.journeyId,
+            dayNumber: item.dayNumber,
+            sequenceOrder: item.sequenceOrder,
+            itemType:
+              item.type === 'accommodation'
+                ? 'accommodation'
+                : item.type === 'meal'
+                ? 'meal'
+                : item.type === 'transport' ||
+                  item.type === 'flight' ||
+                  item.type === 'transfer'
+                ? 'transport'
+                : 'activity',
+            title: item.title,
+            subtitle: item.subtitle,
+            startTimeIso: item.startTimeIso,
+            endTimeIso: item.endTimeIso,
+            displayWindow: item.displayWindow,
+            price: item.price,
+            currency: item.currency,
+            status: item.status === 'cancelled' ? 'disrupted' : item.status,
+            safetyBufferMinutes: item.safetyBufferMinutes,
+            location: item.location,
+          })),
         });
       }
 

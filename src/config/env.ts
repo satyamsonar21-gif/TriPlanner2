@@ -31,6 +31,7 @@ export interface AppEnv {
   aiProviderMode: AiProviderMode;
   aiEdgeFunctionUrl: string;
   aiFeatures: AiFeatureFlags;
+  geminiApiKey?: string;
 }
 
 const getEnvVar = (key: string, defaultValue: string = ''): string => {
@@ -128,4 +129,3 @@ export const env: AppEnv = {
     mutationAssistanceEnabled: getBooleanFlag('VITE_AI_MUTATION_ASSISTANCE_ENABLED', true),
   },
 };
-

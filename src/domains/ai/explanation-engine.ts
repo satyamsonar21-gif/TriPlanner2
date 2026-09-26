@@ -297,7 +297,7 @@ export function buildImpactExplanationBundle(params: {
         ? `Protected bookings: ${preservedLockedTitles.join(', ')}.`
         : 'All other confirmed stops remain intact.',
     budgetImpactSummary: `Current allocated cost is ₹${snapshot.allocatedCost.toLocaleString()} of ₹${snapshot.totalBudget.toLocaleString()} (${snapshot.currency}).`,
-    scheduleImpactSummary: `${impact.constraintEvaluation.hardViolations.length} hard violation(s) and ${impact.constraintEvaluation.softWarnings.length} soft warning(s) detected on baseline state.`,
+    scheduleImpactSummary: `${impact.constraintEvaluation.hardViolations.length} hard violation(s) and ${impact.constraintEvaluation.softViolations.length} soft warning(s) detected on baseline state.`,
     groundedFactIds: [
       `FACT-JOURNEY-${snapshot.journeyId}-V${snapshot.version}`,
       `FACT-CHANGE-${impact.changeRequestId}`,

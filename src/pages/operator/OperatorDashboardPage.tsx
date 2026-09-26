@@ -151,7 +151,10 @@ export const OperatorDashboardPage: React.FC = () => {
       </Card>
 
       {/* Phase 05: Operator AI Operations Copilot */}
-      <OperatorAiCopilotPanel journeyId="jrn_goa_01" actorId="usr_operator_01" />
+      <OperatorAiCopilotPanel
+        actorId="usr_operator_01"
+        onReviewJourneyChange={() => navigate('/operator/changes')}
+      />
 
       {/* Phase 03: Operator Spatial & Transfer Buffer Monitor */}
       <Card>

@@ -657,9 +657,12 @@ export const TravelerDashboardPage: React.FC = () => {
       {/* ============================================================ */}
       <TravelerAiCompanionPanel
         journeyId="jrn_goa_01"
+        snapshot={goaSnapshot}
+        changeRequest={changeRequest}
         actorId={user?.id || 'usr_traveler_01'}
         actorRole="traveler"
-        onJourneyUpdated={(updatedReq, updatedSnap) => {
+        onOpenChangeReview={() => setActiveAlertModal(true)}
+        onJourneyStateUpdated={(updatedReq, updatedSnap) => {
           setChangeRequest(updatedReq);
           setGoaSnapshot(updatedSnap);
         }}

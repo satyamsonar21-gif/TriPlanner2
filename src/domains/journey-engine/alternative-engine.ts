@@ -405,7 +405,7 @@ export class AlternativeEngine {
           title: candidate.title,
           rejectionReasons: [
             {
-              category: 'BOOKING_LOCK',
+              category: 'BOOKING_STATE',
               code: 'LOCKED_BOOKING_CONFLICT',
               severity: 'CRITICAL',
               isHardConstraint: true,

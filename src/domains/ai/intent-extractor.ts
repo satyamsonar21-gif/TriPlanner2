@@ -106,9 +106,12 @@ export function extractIntentAndPreferences(params: {
     five: 5,
     six: 6,
   };
-  const numericTravelersMatch = text.match(
-    /\b(?:for\s+)?(\d{1,2})\s*(?:people|persons?|travelers?|guests?|adults?)\b/i
-  );
+  const numericTravelersMatch =
+    text.match(
+      /\b(?:for\s+)?(\d{1,2})\s*(?:people|persons?|travelers?|guests?|adults?)\b/i
+    ) ||
+    text.match(/\bfor\s+(\d{1,2})\s+(?:under|with|around|below|at|budget)\b/i) ||
+    text.match(/\bfor\s+(\d{1,2})\b/i);
   const wordTravelersMatch = text.match(
     /\b(?:for\s+)?(one|solo|two|couple|three|four|five|six)\s*(?:people|persons?|travelers?|guests?|of\s+us)?\b/i
   );
@@ -197,6 +200,21 @@ export function extractIntentAndPreferences(params: {
   let pace: ExtractedPreferenceField<'relaxed' | 'balanced' | 'fast-paced'> | undefined;
 
   if (
+    /\bnot\s+(?:too\s+)?rushed\s+(?:in\s+the\s+morning|mornings?)\b/i.test(text)
+  ) {
+    morningPreference = {
+      value: 'AVOID_EARLY_START',
+      source: 'EXPLICIT',
+      confidence: 0.95,
+      requiresUserConfirmation: false,
+    };
+    pace = {
+      value: 'balanced',
+      source: 'INFERRED',
+      confidence: 0.88,
+      requiresUserConfirmation: false,
+    };
+  } else if (
     /\b(hate|avoid|no|don'?t\s+want)\s+(early|rushed)\s+mornings?\b/i.test(text) ||
     /\b(relaxed|slow|easy|unhurried)\s+mornings?\b/i.test(text) ||
     /\bkeep\s+mornings?\s+relaxed\b/i.test(text)
@@ -422,14 +440,14 @@ export function extractIntentAndPreferences(params: {
     intent = 'EXPLAIN_ALTERNATIVE';
     confidence = 0.94;
   } else if (
-    /\b(what\s+changed|why\s+did\s+my\s+(itinerary|trip|journey)\s+change|explain\s+(the\s+)?change)\b/i.test(
+    /\b(what\s+changed|why\s+did\s+my\s+(itinerary|trip|journey)\s+change|explain\s+(the\s+)?change|why\s+is\s+.*\s+(flagged|at\s+risk))\b/i.test(
       lower
     )
   ) {
     intent = 'EXPLAIN_CHANGE';
     confidence = 0.93;
   } else if (
-    /\b(impact|affected|downstream|enough\s+time\s+between|conflict|schedule\s+conflict)\b/i.test(
+    /\b(impact|affect(s|ed|ing)?|downstream|flagged|at[- ]?risk|enough\s+time\s+between|conflict|schedule\s+conflict)\b/i.test(
       lower
     ) &&
     !/\bwhich\s+tours\b/i.test(lower)

@@ -922,7 +922,7 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
         | undefined;
       const latestCr =
         (updatedCrId
-          ? this.engine.getChangeRequestById(updatedCrId)
+          ? this.engine.getChangeRequest(updatedCrId)
           : undefined) ||
         this.engine.getChangeRequestsForJourney(rawSnapshot.journeyId)[0];
 
@@ -1297,7 +1297,8 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
   public async applyApprovedProposal(params: {
     proposal: AiChangeProposal;
     sessionActor: SessionActorContext;
-    humanApproved: boolean;
+    humanApproved?: boolean;
+    confirmedByUser?: boolean;
     idempotencyKey?: string;
   }): Promise<StructuredAiResponse> {
     const startMs = Date.now();
@@ -1306,7 +1307,8 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
     const promptDef = getVersionedPrompt('traveler-assistant.v1');
     const toolTrace: AiToolExecutionTrace[] = [];
 
-    if (!params.humanApproved) {
+    const isApproved = Boolean(params.humanApproved || params.confirmedByUser);
+    if (!isApproved) {
       return this.buildControlledResponse({
         requestId,
         correlationId,
@@ -1569,7 +1571,7 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
       : `stays within your ₹${snapshot.totalBudget.toLocaleString()} budget`;
 
     const body = topAlt
-      ? `Hello ${attentionItem.travelerName},\n\nYour scheduled Baga Reef Scuba Diving activity on ${snapshot.title} (v${snapshot.version}) was cancelled by the vendor due to a 2.8m coastal swell advisory. Our Living Journey Engine evaluated valid replacements and recommends ${topAlt.candidate.title} (${topAlt.displayWindow}, score ${topAlt.scoreBreakdown.totalScore}/100), which preserves your evening reservations and ${pricePhrase}.\n\nPlease review and approve the proposed update in your TripPlanner Change Review panel.`
+      ? `Hello ${attentionItem.travelerName},\n\nYour scheduled Baga Reef Scuba Diving activity on ${snapshot.title} (v${snapshot.version}) was cancelled by the vendor due to a 2.8m coastal swell advisory. Our Living Journey Engine evaluated valid replacements and recommends ${topAlt.candidate.title} (${topAlt.displayWindow}, ₹${topAlt.candidate.priceAmount.toLocaleString()}, score ${topAlt.scoreBreakdown.totalScore}/100), which preserves your evening reservations and ${pricePhrase}.\n\nPlease review and approve the proposed update in your TripPlanner Change Review panel.`
       : `Hello ${attentionItem.travelerName},\n\nWe detected a schedule update on ${snapshot.title} (v${snapshot.version}). Please review the validated alternatives in your TripPlanner dashboard.`;
 
     return {
@@ -1601,7 +1603,7 @@ export class AiOrchestrator implements ExtendedPhase05AiBoundary {
     if (!snap) {
       return `[Deterministic Engine Summary]: ${impact.dimensions.DIRECT.explanation} (${impact.downstreamItemIds.length} downstream items evaluated; overall severity: ${impact.overallSeverity}).`;
     }
-    const cr = this.engine.getChangeRequestById(impact.changeRequestId);
+    const cr = this.engine.getChangeRequest(impact.changeRequestId);
     const bundle = buildImpactExplanationBundle({
       impact,
       snapshot: snap,

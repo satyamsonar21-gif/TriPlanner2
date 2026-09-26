@@ -119,6 +119,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
     }
 
     // Auto-confirm and sign in if needed in evaluation/demo
+    let actuallySignedIn = !res.data?.emailVerificationRequired;
     if (res.data?.emailVerificationRequired) {
       try {
         await fetch('/api/auth/auto-confirm', {
@@ -126,17 +127,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'signin' }) 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email.trim(), userId: res.data.userId }),
         });
-        await signIn(email.trim(), password);
+        const signInRes = await signIn(email.trim(), password);
+        if (signInRes.data?.userId) {
+          actuallySignedIn = true;
+        }
       } catch (autoErr) {
         console.warn('Auto confirm warning:', autoErr);
       }
     }
 
     setIsSubmitting(false);
-    setSuccessMessage(`Account created! Welcome to Triplanner, ${fullName}.`);
-    setTimeout(() => {
-      navigateToRoleDashboard(selectedRole);
-    }, 500);
+
+    if (actuallySignedIn) {
+      setSuccessMessage(`Account created! Welcome to Triplanner, ${fullName}.`);
+      setTimeout(() => {
+        navigateToRoleDashboard(selectedRole);
+      }, 500);
+    } else {
+      setSuccessMessage(`Account created! Please check your email to verify your account before signing in.`);
+      setUserSelectedMode('signin');
+      setEmail(email);
+      setPassword('');
+    }
   };
 
   const handleGoogleLogin = async () => {

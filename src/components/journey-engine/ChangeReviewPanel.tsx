@@ -85,8 +85,9 @@ export const ChangeReviewPanel: React.FC<ChangeReviewPanelProps> = ({
   const aiAlternativeExplanation = selectedAlternative
     ? buildAlternativeExplanationBundle({
         alternative: selectedAlternative,
+        snapshot,
+        changeRequest,
         simulation: activeSimulation,
-        rejectedCandidates: changeRequest.rejectedCandidates,
       })
     : null;
 
@@ -94,7 +95,8 @@ export const ChangeReviewPanel: React.FC<ChangeReviewPanelProps> = ({
     ? buildImpactExplanationBundle({
         snapshot,
         impact: changeRequest.impactAnalysis,
-        changeRequest,
+        validAlternativesCount: changeRequest.scoredAlternatives.length,
+        rejectedCandidatesCount: changeRequest.rejectedCandidates.length,
       })
     : null;
 
@@ -610,30 +612,33 @@ export const ChangeReviewPanel: React.FC<ChangeReviewPanelProps> = ({
                   </span>
                 </div>
                 <span className="font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold">
-                  {aiAlternativeExplanation.groundedFacts.length} VERIFIED FACTS
+                  {aiAlternativeExplanation.groundedFactIds.length} VERIFIED FACTS
                 </span>
               </div>
 
               <p className="text-xs text-[#1C1410] leading-relaxed">
-                {aiAlternativeExplanation.summary}
+                {aiAlternativeExplanation.detailedExplanation}
               </p>
 
               {aiImpactExplanation && (
                 <p className="text-[11px] text-[#554742] leading-snug">
-                  <strong>Cascade Context:</strong> {aiImpactExplanation.summary}
+                  <strong>Cascade Context:</strong>{' '}
+                  {aiImpactExplanation.shortExplanation}
                 </p>
               )}
 
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {aiAlternativeExplanation.groundedFacts.map((fact) => (
-                  <span
-                    key={fact.factId}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/90 border border-[#33231E]/15 font-mono text-[9px] text-[#33231E]"
-                  >
-                    <strong className="text-terracotta">{fact.factId}:</strong>{' '}
-                    {fact.label} = {fact.value}
-                  </span>
-                ))}
+                {aiAlternativeExplanation.groundedFactIds.map(
+                  (factId: string) => (
+                    <span
+                      key={factId}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/90 border border-[#33231E]/15 font-mono text-[9px] text-[#33231E]"
+                    >
+                      <strong className="text-terracotta">GROUNDED:</strong>{' '}
+                      {factId}
+                    </span>
+                  )
+                )}
               </div>
             </div>
           )}

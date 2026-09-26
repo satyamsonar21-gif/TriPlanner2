@@ -189,7 +189,7 @@ export const OperatorChangeCenterPage: React.FC = () => {
       />
 
       {/* Phase 05: Operator AI Operations Copilot */}
-      <OperatorAiCopilotPanel journeyId="jrn_goa_01" actorId="usr_operator_01" />
+      <OperatorAiCopilotPanel actorId="usr_operator_01" />
 
       {/* Live Day 2 Dependency Graph & Outbox Event Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

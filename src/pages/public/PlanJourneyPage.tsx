@@ -126,10 +126,13 @@ export const PlanJourneyPage: React.FC = () => {
     setIsAiExtracting(true);
     try {
       const res = await sharedAiOrchestrator.processRequest({
-        userPrompt: trimmed,
+        operationType: 'trip_planning',
+        userMessage: trimmed,
         journeyId: 'jrn_goa_01',
-        actorId: 'usr_traveler_01',
-        actorRole: 'traveler',
+        sessionActor: {
+          actorId: 'usr_traveler_01',
+          actorRole: 'traveler',
+        },
       });
       setAiPlanningResponse(res);
 
@@ -138,10 +141,10 @@ export const PlanJourneyPage: React.FC = () => {
         if (prefs.durationDays?.value) {
           setDurationDays(prefs.durationDays.value);
         }
-        if (prefs.budgetAmount?.value) {
+        if (prefs.budget?.value) {
           const days = prefs.durationDays?.value || durationDays;
           setBudgetPerDay(
-            Math.max(2500, Math.round(prefs.budgetAmount.value / days / 500) * 500)
+            Math.max(2500, Math.round(prefs.budget.value / days / 500) * 500)
           );
         }
         if (prefs.pace?.value) {
@@ -278,7 +281,7 @@ export const PlanJourneyPage: React.FC = () => {
                   className="p-3 rounded-lg bg-white border border-espresso/15 space-y-2 text-xs"
                 >
                   <p className="text-[#1C1410] leading-snug">
-                    {aiPlanningResponse.assistantMessage}
+                    {aiPlanningResponse.message}
                   </p>
                   <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
                     {aiPlanningResponse.extractedPreferences.destination && (
@@ -293,11 +296,11 @@ export const PlanJourneyPage: React.FC = () => {
                         {aiPlanningResponse.extractedPreferences.durationDays.source}]
                       </span>
                     )}
-                    {aiPlanningResponse.extractedPreferences.budgetAmount && (
+                    {aiPlanningResponse.extractedPreferences.budget && (
                       <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200">
                         Cap: ₹
-                        {aiPlanningResponse.extractedPreferences.budgetAmount.value.toLocaleString()}{' '}
-                        [{aiPlanningResponse.extractedPreferences.budgetAmount.source}]
+                        {aiPlanningResponse.extractedPreferences.budget.value.toLocaleString()}{' '}
+                        [{aiPlanningResponse.extractedPreferences.budget.source}]
                       </span>
                     )}
                     {aiPlanningResponse.extractedPreferences.morningPreference && (

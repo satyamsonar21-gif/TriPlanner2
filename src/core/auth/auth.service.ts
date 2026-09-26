@@ -280,7 +280,7 @@ export class AuthService {
         }
 
         return {
-          data: { userId: data.user.id },
+          data: { userId: data.user?.id || '' },
           error: null,
         };
       }
