@@ -26,6 +26,7 @@ import {
   type JourneySnapshot,
 } from '@/domains/journey-engine';
 import { ChangeReviewPanel } from '@/components/journey-engine';
+import { TravelerAiCompanionPanel } from '@/components/ai';
 
 export const TravelerDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -650,6 +651,19 @@ export const TravelerDashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* 4. PHASE 05: AI JOURNEY COMPANION (GROUNDED DETERMINISTIC)    */}
+      {/* ============================================================ */}
+      <TravelerAiCompanionPanel
+        journeyId="jrn_goa_01"
+        actorId={user?.id || 'usr_traveler_01'}
+        actorRole="traveler"
+        onJourneyUpdated={(updatedReq, updatedSnap) => {
+          setChangeRequest(updatedReq);
+          setGoaSnapshot(updatedSnap);
+        }}
+      />
 
       {/* ============================================================ */}
       {/* LIVING JOURNEY ENGINE SIMULATION MODAL                       */}

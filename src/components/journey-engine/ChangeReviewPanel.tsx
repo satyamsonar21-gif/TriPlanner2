@@ -22,6 +22,10 @@ import type {
   JourneySnapshot,
 } from '@/domains/journey-engine';
 import { sharedLivingJourneyEngine } from '@/domains/journey-engine';
+import {
+  buildAlternativeExplanationBundle,
+  buildImpactExplanationBundle,
+} from '@/domains/ai';
 import { JourneyService } from '@/domains/journeys/journey.service';
 
 interface ChangeReviewPanelProps {
@@ -77,6 +81,22 @@ export const ChangeReviewPanel: React.FC<ChangeReviewPanelProps> = ({
   const activeSimulation = selectedAlternative
     ? changeRequest.simulationsByAlternativeId[selectedAlternative.id]
     : undefined;
+
+  const aiAlternativeExplanation = selectedAlternative
+    ? buildAlternativeExplanationBundle({
+        alternative: selectedAlternative,
+        simulation: activeSimulation,
+        rejectedCandidates: changeRequest.rejectedCandidates,
+      })
+    : null;
+
+  const aiImpactExplanation = changeRequest.impactAnalysis
+    ? buildImpactExplanationBundle({
+        snapshot,
+        impact: changeRequest.impactAnalysis,
+        changeRequest,
+      })
+    : null;
 
   const isApplied = changeRequest.state === 'APPLIED';
   const isRejected = changeRequest.state === 'REJECTED';
@@ -575,6 +595,48 @@ export const ChangeReviewPanel: React.FC<ChangeReviewPanelProps> = ({
               );
             })}
           </div>
+
+          {/* PHASE 05: WHY THIS RECOMMENDATION? (GROUNDED AI EXPLANATION) */}
+          {aiAlternativeExplanation && (
+            <div
+              data-testid="ai-why-this-recommendation"
+              className="p-4 rounded-xl bg-[#F4E8DC]/75 border border-terracotta/30 space-y-2.5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-terracotta" />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#1C1410]">
+                    WHY THIS RECOMMENDATION? • GROUNDED AI EXPLANATION
+                  </span>
+                </div>
+                <span className="font-mono text-[9px] uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold">
+                  {aiAlternativeExplanation.groundedFacts.length} VERIFIED FACTS
+                </span>
+              </div>
+
+              <p className="text-xs text-[#1C1410] leading-relaxed">
+                {aiAlternativeExplanation.summary}
+              </p>
+
+              {aiImpactExplanation && (
+                <p className="text-[11px] text-[#554742] leading-snug">
+                  <strong>Cascade Context:</strong> {aiImpactExplanation.summary}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {aiAlternativeExplanation.groundedFacts.map((fact) => (
+                  <span
+                    key={fact.factId}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/90 border border-[#33231E]/15 font-mono text-[9px] text-[#33231E]"
+                  >
+                    <strong className="text-terracotta">{fact.factId}:</strong>{' '}
+                    {fact.label} = {fact.value}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ================================================================ */}

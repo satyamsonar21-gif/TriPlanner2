@@ -18,6 +18,7 @@ import {
   type JourneySnapshot,
 } from '@/domains/journey-engine';
 import { ChangeReviewPanel } from '@/components/journey-engine';
+import { OperatorAiCopilotPanel } from '@/components/ai';
 import { GOA_JOURNEY_ITINERARY_STOPS, JourneyService } from '@/domains/journeys/journey.service';
 
 export const OperatorChangeCenterPage: React.FC = () => {
@@ -186,6 +187,9 @@ export const OperatorChangeCenterPage: React.FC = () => {
           setSnapshot(updatedSnap);
         }}
       />
+
+      {/* Phase 05: Operator AI Operations Copilot */}
+      <OperatorAiCopilotPanel journeyId="jrn_goa_01" actorId="usr_operator_01" />
 
       {/* Live Day 2 Dependency Graph & Outbox Event Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

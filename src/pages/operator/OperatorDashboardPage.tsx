@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { OperatorAiCopilotPanel } from '@/components/ai';
 
 export const OperatorDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -148,6 +149,9 @@ export const OperatorDashboardPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Phase 05: Operator AI Operations Copilot */}
+      <OperatorAiCopilotPanel journeyId="jrn_goa_01" actorId="usr_operator_01" />
 
       {/* Phase 03: Operator Spatial & Transfer Buffer Monitor */}
       <Card>
