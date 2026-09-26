@@ -1,4 +1,4 @@
-import { DEMO_LOCATION_FIXTURES, normalizeGeoLocation } from '@/domains/geo';
+import { normalizeGeoLocation } from '@/domains/geo';
 import {
   ConstraintEngine,
   computeDeterministicDistanceMeters,
