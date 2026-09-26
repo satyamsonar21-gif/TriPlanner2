@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --parchment: #F3E8DC;
+    --terracotta: #8F321F;
+    --terracotta-hover: #752717;
+    --burnt-clay: #B85C42;
+    --espresso: #33231E;
+    --antique-brass: #C6A16B;
+    --soft-ivory: #FFF9F3;
+    --stone-gray: #8A7B75;
+    --deep-slate: #1C1410;
+
+    --background: #FFF9F3;
+    --foreground: #1C1410;
+    --surface: #F3E8DC;
+
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@theme {
+  --color-parchment: #F3E8DC;
+  --color-terracotta: #8F321F;
+  --color-terracotta-hover: #752717;
+  --color-burnt-clay: #B85C42;
+  --color-espresso: #33231E;
+  --color-antique-brass: #C6A16B;
+  --color-soft-ivory: #FFF9F3;
+  --color-stone-gray: #8A7B75;
+  --color-deep-slate: #1C1410;
+
+  --color-background: #FFF9F3;
+  --color-foreground: #1C1410;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
