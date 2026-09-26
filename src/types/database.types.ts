@@ -245,7 +245,7 @@ export interface ItineraryItem {
   price: number;
   currency: string;
   booking_id?: string;
-  booking_state?: 'NONE' | 'PENDING' | 'CONFIRMED' | 'NON_REFUNDABLE' | 'MODIFIABLE' | 'CANCELLED';
+  booking_state?: 'NONE' | 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'NON_REFUNDABLE' | 'MODIFIABLE' | 'CANCELLED';
   is_locked?: boolean;
   party_size?: number;
   category_tags?: string[];

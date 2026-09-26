@@ -8,16 +8,12 @@ import path from 'node:path';
 const {
   DependencyGraph,
   ConstraintEngine,
-  computeDeterministicDistanceMeters,
-  computeDeterministicTravelMinutes,
-  ImpactAnalyzer,
   AlternativeEngine,
   CANDIDATE_INVENTORY_CATALOG,
   JourneySimulator,
   LivingJourneyEngine,
   createGoaDemoJourneySnapshot,
   sharedLivingJourneyEngine,
-  ensureGoaDemoChangeRequest,
   isValidChangeStateTransition,
 } = await import('@/domains/journey-engine/index.ts');
 

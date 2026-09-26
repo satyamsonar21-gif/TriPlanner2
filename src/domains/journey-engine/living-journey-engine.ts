@@ -1048,6 +1048,8 @@ export class LivingJourneyEngine
       };
     }
 
+    const outboxBackupLength = this.outboxEvents.length;
+
     // Auto-approve if called from AWAITING_APPROVAL or ALTERNATIVES_READY by an authorized actor
     if (
       req.state === 'AWAITING_APPROVAL' ||
@@ -1069,6 +1071,7 @@ export class LivingJourneyEngine
       : undefined;
 
     if (!chosenAlt || !chosenSim) {
+      this.outboxEvents.length = outboxBackupLength;
       return {
         success: false,
         idempotentReplay: false,
@@ -1086,6 +1089,7 @@ export class LivingJourneyEngine
       currentSnapshot
     );
     if (!revalidation.valid) {
+      this.outboxEvents.length = outboxBackupLength;
       return {
         success: false,
         idempotentReplay: false,
@@ -1252,11 +1256,12 @@ export class LivingJourneyEngine
       );
       return structuredClone(result);
     } catch (err) {
-      // ATOMIC ROLLBACK: Restore exact pre-apply snapshot & mark failure details
+      // ATOMIC ROLLBACK: Restore exact pre-apply snapshot, outbox state, & mark failure details
       this.snapshotsByJourneyId.set(
         req.journeyId,
         structuredClone(rollbackBackup)
       );
+      this.outboxEvents.length = outboxBackupLength;
       if (isValidChangeStateTransition(req.state, 'FAILED')) {
         this.transitionState(
           req,
