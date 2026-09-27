@@ -148,32 +148,44 @@ export function inspectUserPromptSecurity(
  * (vendor notes, activity descriptions, reviews, or tool outputs) so the content
  * is treated strictly as inert data.
  */
-export function sanitizeUntrustedExternalText(rawText: string): {
+export interface SanitizedExternalTextResult {
   sanitizedData: string;
   neutralizedDirectivesCount: number;
-} {
+  hasInjectionAttempt: boolean;
+  redactedPatterns: string[];
+}
+
+export function sanitizeUntrustedExternalText(rawText: string): SanitizedExternalTextResult {
   if (!rawText) {
-    return { sanitizedData: '', neutralizedDirectivesCount: 0 };
+    return {
+      sanitizedData: '',
+      neutralizedDirectivesCount: 0,
+      hasInjectionAttempt: false,
+      redactedPatterns: [],
+    };
   }
 
   let neutralizedCount = 0;
+  const redactedPatterns: string[] = [];
   let cleaned = rawText;
 
   const embeddedDirectivePatterns: RegExp[] = [
     /ignore\s+(all\s+)?(previous|prior|system)\s+instructions\.?/gi,
+    /ignore\s+(all\s+)?(safety\s+)?constraints/gi,
+    /system\s+override\s*:?/gi,
     /delete\s+(the\s+|all\s+)?journeys?\.?/gi,
     /call\s+[a-zA-Z0-9_]+\s*\([^)]*\)/gi,
     /\b(DROP\s+TABLE|UPDATE\s+\w+\s+SET|DELETE\s+FROM|INSERT\s+INTO)\b[^.;]*/gi,
     /system\s+instruction\s*:/gi,
     /bypass\s+approval/gi,
-    /ignore\s+all\s+constraints/gi,
     /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
     /<[^>]+>/gi,
   ];
 
   for (const pattern of embeddedDirectivePatterns) {
-    cleaned = cleaned.replace(pattern, () => {
+    cleaned = cleaned.replace(pattern, (match) => {
       neutralizedCount += 1;
+      redactedPatterns.push(match);
       return '[QUARANTINED_UNTRUSTED_DIRECTIVE]';
     });
   }
@@ -182,6 +194,8 @@ export function sanitizeUntrustedExternalText(rawText: string): {
   return {
     sanitizedData: piiCleaned.sanitizedText,
     neutralizedDirectivesCount: neutralizedCount,
+    hasInjectionAttempt: neutralizedCount > 0,
+    redactedPatterns,
   };
 }
 

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { MOCK_TRAVELER_METRICS } from '@/domains/traveler/traveler.data';
 import { DestinationWeatherWidget } from '@/components/traveler/DestinationWeatherWidget';
+import { DestinationMap } from '@/components/traveler/DestinationMap';
 import {
   ensureGoaDemoChangeRequest,
   sharedLivingJourneyEngine,
@@ -169,6 +170,12 @@ export const TravelerDashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* PHASE 06: REAL-TIME WEATHER & EXTERNAL ALERT BANNER */}
+      <TravelerWeatherAlertBanner
+        journeyId="jrn_goa_01"
+        onReviewAlternatives={() => setActiveAlertModal(true)}
+      />
 
       {/* ============================================================ */}
       {/* 3. MAIN DASHBOARD CONTENT (2-COLUMN EDITORIAL GRID)           */}
@@ -328,6 +335,9 @@ export const TravelerDashboardPage: React.FC = () => {
 
           {/* REAL-TIME WEATHER INTEGRATION COMPONENT */}
           <DestinationWeatherWidget initialDestinationId="dest_goa_01" />
+
+          {/* MAPBOX INTERACTIVE DESTINATION MAP */}
+          <DestinationMap destinationId="dest_goa_01" />
 
           {/* MY JOURNEYS LIST WIDGET */}
           <div className="space-y-3">

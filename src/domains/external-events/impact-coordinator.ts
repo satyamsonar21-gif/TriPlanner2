@@ -1,17 +1,19 @@
 import type {
   EngineChangeRequest,
-  JourneySnapshot,
-  LivingJourneyEngine,
+  JourneySnapshotItem,
   ScoredAlternative,
 } from '@/domains/journey-engine/types';
-import { sharedLivingJourneyEngine } from '@/domains/journey-engine';
+import {
+  LivingJourneyEngine,
+  sharedLivingJourneyEngine,
+} from '@/domains/journey-engine';
 import { JourneyRelevanceEngine } from './relevance-engine';
 import type {
   ExternalEvent,
   ExternalEventJourneyImpact,
   WeatherEventChangeProposal,
 } from './types';
-import { calculateDataFreshness, computeEventFingerprint } from './normalization';
+import { computeEventFingerprint } from './normalization';
 
 export interface WeatherNotificationRecord {
   id: string;
@@ -142,12 +144,32 @@ export class ExternalEventImpactCoordinator {
       snapshot,
     });
 
-    this.activeImpactsByJourney.set(journeyId, impacts);
+    // Filter to actionable impacts, prioritize CRITICAL over HIGH, and respect protected items
+    const actionableImpacts = impacts
+      .filter(
+        (imp) => imp.disruptionRisk === 'HIGH' || imp.disruptionRisk === 'CRITICAL'
+      )
+      .sort((a, b) => {
+        const aProtected = protectedItemIds?.includes(a.affectedItemIds[0]) ? 1 : 0;
+        const bProtected = protectedItemIds?.includes(b.affectedItemIds[0]) ? 1 : 0;
+        if (aProtected !== bProtected) return aProtected - bProtected;
 
-    // Filter to actionable impacts (HIGH or CRITICAL)
-    const actionableImpacts = impacts.filter(
-      (imp) => imp.disruptionRisk === 'HIGH' || imp.disruptionRisk === 'CRITICAL'
-    );
+        const rankA = a.disruptionRisk === 'CRITICAL' ? 2 : 1;
+        const rankB = b.disruptionRisk === 'CRITICAL' ? 2 : 1;
+        return rankB - rankA;
+      });
+
+    const sortedAllImpacts = [...impacts].sort((a, b) => {
+      const aProtected = protectedItemIds?.includes(a.affectedItemIds[0]) ? 1 : 0;
+      const bProtected = protectedItemIds?.includes(b.affectedItemIds[0]) ? 1 : 0;
+      if (aProtected !== bProtected) return aProtected - bProtected;
+
+      const rankA = a.disruptionRisk === 'CRITICAL' ? 3 : a.disruptionRisk === 'HIGH' ? 2 : 1;
+      const rankB = b.disruptionRisk === 'CRITICAL' ? 3 : b.disruptionRisk === 'HIGH' ? 2 : 1;
+      return rankB - rankA;
+    });
+
+    this.activeImpactsByJourney.set(journeyId, sortedAllImpacts);
 
     if (actionableImpacts.length === 0 || isStale) {
       // Informational or stale; no operational mutation or change request created
@@ -155,13 +177,13 @@ export class ExternalEventImpactCoordinator {
         eventProcessed: true,
         isDuplicate: false,
         isStale,
-        impacts,
+        impacts: sortedAllImpacts,
       };
     }
 
     const primaryImpact = actionableImpacts[0];
     const affectedItemId = primaryImpact.affectedItemIds[0];
-    const affectedItem = snapshot.items.find((i) => i.id === affectedItemId);
+    const affectedItem = snapshot.items.find((i: JourneySnapshotItem) => i.id === affectedItemId);
 
     if (!affectedItem) {
       return {
@@ -189,6 +211,7 @@ export class ExternalEventImpactCoordinator {
     });
 
     primaryImpact.changeRequestId = changeReq.id;
+    changeReq.affectedItemId = affectedItemId;
 
     // 5. Build Structured Weather Change Proposal if valid alternatives exist
     let proposal: WeatherEventChangeProposal | undefined;
@@ -196,13 +219,12 @@ export class ExternalEventImpactCoordinator {
 
     if (topAlt) {
       const proposalId = `prop_wx_${event.id}_v${snapshot.version}_${topAlt.id}`;
-      proposal = {
+      const weatherProposal: WeatherEventChangeProposal = {
         proposalId,
         requestId: `req_${Date.now()}`,
         correlationId: `corr_wx_${event.id}`,
         idempotencyKey: `idem_apply_wx_${changeReq.id}_v${snapshot.version}_${topAlt.id}`,
         journeyId: snapshot.journeyId,
-        journeyVersion: snapshot.version,
         expectedJourneyVersion: snapshot.version,
         changeRequestId: changeReq.id,
         disruptedItemId: affectedItem.id,
@@ -220,11 +242,12 @@ export class ExternalEventImpactCoordinator {
         currency: snapshot.currency,
         preservedItemIds: protectedItemIds || [],
         preservedItemTitles: (protectedItemIds || []).map(
-          (pid) => snapshot.items.find((i) => i.id === pid)?.title || pid
+          (pid) => snapshot.items.find((i: JourneySnapshotItem) => i.id === pid)?.title || pid
         ),
         downstreamShiftsCount: topAlt.downstreamShifts.length,
         requiresHumanApproval: true,
         approvalState: 'AWAITING_HUMAN_APPROVAL',
+        generatedAt: new Date().toISOString(),
         simulationSummary: {
           beforeWindow: affectedItem.displayWindow,
           afterWindow: topAlt.displayWindow,
@@ -236,14 +259,15 @@ export class ExternalEventImpactCoordinator {
         sourceProviderEventId: event.providerEventId,
         eventSeverity: event.severity,
         eventTitle: event.title,
-        activityWeatherSensitivity: primaryImpact.activitySensitivity,
+        activitySensitivity: primaryImpact.activitySensitivity,
         downstreamShiftSummary:
           topAlt.downstreamShifts.length > 0
             ? `${topAlt.downstreamShifts.length} downstream stops shifted safely`
             : 'No downstream shifts',
-      } as WeatherEventChangeProposal;
+      };
 
-      this.activeProposalsByJourney.set(journeyId, proposal);
+      proposal = weatherProposal;
+      this.activeProposalsByJourney.set(journeyId, weatherProposal);
       primaryImpact.proposalGenerated = true;
       primaryImpact.proposalId = proposalId;
     }
@@ -272,7 +296,7 @@ export class ExternalEventImpactCoordinator {
       eventProcessed: true,
       isDuplicate: false,
       isStale: false,
-      impacts,
+      impacts: sortedAllImpacts,
       changeRequest: changeReq,
       proposal,
       notification,

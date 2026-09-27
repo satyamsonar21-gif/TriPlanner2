@@ -31,7 +31,11 @@ export type ExternalEventSeverity =
   | 'LOW'
   | 'MEDIUM'
   | 'HIGH'
-  | 'CRITICAL';
+  | 'CRITICAL'
+  | 'ADVISORY'
+  | 'WATCH'
+  | 'WARNING'
+  | 'EMERGENCY';
 
 export type ExternalEventStatus =
   | 'DETECTED'
@@ -53,14 +57,18 @@ export type DataFreshnessStatus =
 
 export interface ExternalFactProvenance {
   provider: string;
+  providerName?: string;
   providerEventId: string;
   observedAt: string; // ISO
   retrievedAt: string; // ISO
   sourceUrl?: string;
+  sourceEndpoint?: string;
   location: GeoCoordinate;
   dataVersion: number;
   expiresAt: string; // ISO
   confidenceScore: number; // 0..1
+  freshness?: DataFreshnessStatus;
+  rawPayloadHash?: string;
 }
 
 export interface ExternalEvent {
@@ -75,18 +83,25 @@ export interface ExternalEvent {
   observedAt: string; // ISO
   effectiveFrom: string; // ISO
   effectiveUntil: string; // ISO
+  validFrom?: string;
+  validTo?: string;
   latitude: number;
   longitude: number;
+  coordinates?: GeoCoordinate;
   radiusMeters: number;
   affectedAreaDescription?: string;
   sourceUrl?: string;
   confidence: number;
   rawReference?: Record<string, unknown>;
   normalizedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
   expiresAt: string;
   freshness: DataFreshnessStatus;
   version: number;
   provenance: ExternalFactProvenance;
+  windSpeedKmH?: number;
+  windGustKmH?: number;
 }
 
 export interface WeatherObservation {
@@ -156,6 +171,13 @@ export interface ExternalEventJourneyImpact {
   proposalId?: string;
   changeRequestId?: string;
   assessedAt: string;
+  activityId?: string;
+  activityTitle?: string;
+  eventTitle?: string;
+  eventSeverity?: string;
+  impactReason?: string;
+  recommendedAction?: string;
+  evaluatedAt?: string;
 }
 
 export type ProviderHealthStatus = 'HEALTHY' | 'DEGRADED' | 'UNAVAILABLE';

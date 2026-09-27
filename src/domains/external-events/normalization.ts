@@ -120,11 +120,23 @@ export function mphToKmh(mph: number): number {
 }
 
 export function kmhToMph(kmh: number): number {
-  return Number((kmh / 1.60934).toFixed(1));
+  return Number((kmh / 1.60934).toFixed(2));
+}
+
+export function mmToInches(mm: number): number {
+  return Number((mm / 25.4).toFixed(2));
+}
+
+export function inchesToMm(inches: number): number {
+  return Number((inches * 25.4).toFixed(1));
+}
+
+export function metersToMiles(meters: number): number {
+  return Number((meters / 1609.34).toFixed(2));
 }
 
 export function milesToMeters(miles: number): number {
-  return Math.round(miles * 1609.34);
+  return Number((miles * 1609.34).toFixed(2));
 }
 
 /**
@@ -215,26 +227,49 @@ export function normalizeEventCategory(raw: unknown): ExternalEventCategory {
   return 'WEATHER';
 }
 
+export interface EventNormalizationResult {
+  valid: boolean;
+  event: ExternalEvent | null;
+  errors: string[];
+  quarantineReason?: string;
+}
+
+export interface WeatherNormalizationResult {
+  valid: boolean;
+  observation: WeatherObservation | null;
+  errors: string[];
+  quarantineReason?: string;
+}
+
 /**
  * Computes deterministic fingerprint for an external event to detect exact duplicate polls.
  */
 export function computeEventFingerprint(params: {
-  provider: string;
-  providerEventId: string;
-  category: string;
-  effectiveFrom: string;
-  effectiveUntil: string;
-  latitude: number;
-  longitude: number;
+  provider?: string;
+  providerEventId?: string;
+  id?: string;
+  category?: string;
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  latitude?: number;
+  longitude?: number;
+  provenance?: { provider?: string; providerEventId?: string };
 }): string {
+  const prov = (params.provider || params.provenance?.provider || 'unknown').toLowerCase();
+  const provId = params.providerEventId || params.id || params.provenance?.providerEventId || 'unknown';
+  const cat = (params.category || 'OTHER').toUpperCase();
+  const efFrom = params.effectiveFrom || '';
+  const efUntil = params.effectiveUntil || '';
+  const lat = typeof params.latitude === 'number' && Number.isFinite(params.latitude) ? params.latitude.toFixed(4) : '0.0000';
+  const lng = typeof params.longitude === 'number' && Number.isFinite(params.longitude) ? params.longitude.toFixed(4) : '0.0000';
   const parts = [
-    params.provider.toLowerCase(),
-    params.providerEventId,
-    params.category.toUpperCase(),
-    params.effectiveFrom,
-    params.effectiveUntil,
-    params.latitude.toFixed(4),
-    params.longitude.toFixed(4),
+    prov,
+    provId,
+    cat,
+    efFrom,
+    efUntil,
+    lat,
+    lng,
   ];
   return `fp_${parts.join('::')}`;
 }
@@ -246,16 +281,16 @@ export function computeEventFingerprint(params: {
 export function normalizeExternalEvent(
   raw: RawEventPayload,
   fallbackProvider = 'open-meteo'
-): { event: ExternalEvent | null; quarantineReason?: string } {
+): EventNormalizationResult {
   try {
     if (!raw || typeof raw !== 'object') {
-      return { event: null, quarantineReason: 'PAYLOAD_NOT_OBJECT' };
+      return { valid: false, event: null, errors: ['PAYLOAD_NOT_OBJECT'], quarantineReason: 'PAYLOAD_NOT_OBJECT' };
     }
 
     const provider = (raw.provider || fallbackProvider).trim();
     const providerEventId = (raw.providerEventId || raw.id || '').trim();
     if (!providerEventId) {
-      return { event: null, quarantineReason: 'MISSING_PROVIDER_EVENT_ID' };
+      return { valid: false, event: null, errors: ['MISSING_PROVIDER_EVENT_ID'], quarantineReason: 'MISSING_PROVIDER_EVENT_ID' };
     }
 
     // Coordinates validation
@@ -266,7 +301,12 @@ export function normalizeExternalEvent(
         longitude: raw.longitude,
       });
     } catch (coordErr) {
-      return { event: null, quarantineReason: `INVALID_COORDINATES: ${(coordErr as Error).message}` };
+      return {
+        valid: false,
+        event: null,
+        errors: [`INVALID_COORDINATES: ${(coordErr as Error).message}`],
+        quarantineReason: `INVALID_COORDINATES: ${(coordErr as Error).message}`,
+      };
     }
 
     // Timestamps validation
@@ -344,9 +384,14 @@ export function normalizeExternalEvent(
       },
     };
 
-    return { event };
+    return { valid: true, event, errors: [] };
   } catch (err) {
-    return { event: null, quarantineReason: `NORMALIZATION_EXCEPTION: ${(err as Error).message}` };
+    return {
+      valid: false,
+      event: null,
+      errors: [`NORMALIZATION_EXCEPTION: ${(err as Error).message}`],
+      quarantineReason: `NORMALIZATION_EXCEPTION: ${(err as Error).message}`,
+    };
   }
 }
 
@@ -356,10 +401,34 @@ export function normalizeExternalEvent(
 export function normalizeWeatherObservation(
   raw: RawWeatherPayload,
   fallbackProvider = 'open-meteo'
-): { observation: WeatherObservation | null; quarantineReason?: string } {
+): WeatherNormalizationResult {
   try {
     if (!raw || typeof raw !== 'object') {
-      return { observation: null, quarantineReason: 'PAYLOAD_NOT_OBJECT' };
+      return { valid: false, observation: null, errors: ['PAYLOAD_NOT_OBJECT'], quarantineReason: 'PAYLOAD_NOT_OBJECT' };
+    }
+
+    if (
+      raw.temperatureC !== undefined &&
+      (typeof raw.temperatureC !== 'number' || !Number.isFinite(raw.temperatureC) || isNaN(raw.temperatureC))
+    ) {
+      return {
+        valid: false,
+        observation: null,
+        errors: ['INVALID_TEMPERATURE: temperatureC must be a finite number'],
+        quarantineReason: 'INVALID_TEMPERATURE',
+      };
+    }
+
+    if (
+      raw.temperatureF !== undefined &&
+      (typeof raw.temperatureF !== 'number' || !Number.isFinite(raw.temperatureF) || isNaN(raw.temperatureF))
+    ) {
+      return {
+        valid: false,
+        observation: null,
+        errors: ['INVALID_TEMPERATURE: temperatureF must be a finite number'],
+        quarantineReason: 'INVALID_TEMPERATURE',
+      };
     }
 
     let coords: GeoCoordinate;
@@ -369,7 +438,12 @@ export function normalizeWeatherObservation(
         longitude: raw.longitude,
       });
     } catch (err) {
-      return { observation: null, quarantineReason: `INVALID_COORDINATES: ${(err as Error).message}` };
+      return {
+        valid: false,
+        observation: null,
+        errors: [`INVALID_COORDINATES: ${(err as Error).message}`],
+        quarantineReason: `INVALID_COORDINATES: ${(err as Error).message}`,
+      };
     }
 
     const provider = (raw.provider || fallbackProvider).trim();
@@ -470,8 +544,13 @@ export function normalizeWeatherObservation(
       },
     };
 
-    return { observation };
+    return { valid: true, observation, errors: [] };
   } catch (err) {
-    return { observation: null, quarantineReason: `OBSERVATION_NORMALIZATION_EXCEPTION: ${(err as Error).message}` };
+    return {
+      valid: false,
+      observation: null,
+      errors: [`OBSERVATION_NORMALIZATION_EXCEPTION: ${(err as Error).message}`],
+      quarantineReason: `OBSERVATION_NORMALIZATION_EXCEPTION: ${(err as Error).message}`,
+    };
   }
 }

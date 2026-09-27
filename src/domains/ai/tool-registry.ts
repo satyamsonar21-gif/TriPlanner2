@@ -1080,6 +1080,8 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
       const expectedVersion =
         typeof args.expectedJourneyVersion === 'number'
           ? args.expectedJourneyVersion
+          : typeof args.expectedVersion === 'number'
+          ? args.expectedVersion
           : undefined;
 
       if (
@@ -1164,7 +1166,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Retrieve verified, normalized atmospheric observations (temperature, wind, precipitation) for a coordinate or journey location.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 8000,
     auditRequired: false,
     handler: async (args, ctx) => {
@@ -1175,11 +1177,12 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
       if (lat === undefined || lng === undefined) {
         if (typeof args.journeyId === 'string' && args.journeyId.trim()) {
           const { snapshot } = requireAuthorizedJourney(args, ctx);
-          const firstItem = snapshot.items.find((i) => i.location?.coordinates);
-          if (firstItem?.location?.coordinates) {
-            lat = firstItem.location.coordinates.latitude;
-            lng = firstItem.location.coordinates.longitude;
-            locName = firstItem.location.name || snapshot.title;
+          const firstItem = snapshot.items.find((i) => i.location?.coordinate || (i.location && typeof i.location.latitude === 'number'));
+          const loc = firstItem?.location;
+          if (loc) {
+            lat = loc.coordinate?.lat ?? loc.latitude;
+            lng = loc.coordinate?.lng ?? loc.longitude;
+            locName = loc.name || snapshot.title;
           }
         }
       }
@@ -1188,15 +1191,17 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         lng = 74.124;
       }
 
+      const geoCoord = { latitude: lat, longitude: lng, lat, lng };
+
       let obs;
       try {
         obs = await sharedFixtureProvider.fetchCurrentObservations({
-          coordinates: { latitude: lat, longitude: lng },
+          coordinates: geoCoord,
           locationName: locName,
         });
       } catch {
         obs = await sharedOpenMeteoProvider.fetchCurrentObservations({
-          coordinates: { latitude: lat, longitude: lng },
+          coordinates: geoCoord,
           locationName: locName,
         });
       }
@@ -1217,7 +1222,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         data: {
           observation: obs,
         },
-        summary: `Current weather at ${obs.locationName}: ${obs.temperatureC}°C (feels like ${obs.feelsLikeC}°C), ${obs.weatherCondition}, wind ${obs.windSpeedKmH} km/h, gusting ${obs.windGustKmH} km/h. Freshness: ${obs.provenance.freshness}.`,
+        summary: `Current weather at ${obs.locationName}: ${obs.temperatureC}°C (feels like ${obs.feelsLikeC}°C), ${obs.weatherCondition}, wind ${obs.windSpeedKmH} km/h, gusting ${obs.windGustKmH} km/h. Freshness: ${obs.freshness}.`,
         facts,
       };
     },
@@ -1228,7 +1233,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Retrieve normalized weather forecast timeline for coordinates or journey dates.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 8000,
     auditRequired: false,
     handler: async (args, ctx) => {
@@ -1238,15 +1243,18 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
 
       if (args.journeyId && typeof args.journeyId === 'string') {
         const { snapshot } = requireAuthorizedJourney(args, ctx);
-        const firstItem = snapshot.items.find((i) => i.location?.coordinates);
-        if (firstItem?.location?.coordinates) {
-          lat = firstItem.location.coordinates.latitude;
-          lng = firstItem.location.coordinates.longitude;
+        const firstItem = snapshot.items.find((i) => i.location?.coordinate || (i.location && typeof i.location.latitude === 'number'));
+        const loc = firstItem?.location;
+        if (loc) {
+          lat = loc.coordinate?.lat ?? loc.latitude ?? 15.2993;
+          lng = loc.coordinate?.lng ?? loc.longitude ?? 74.124;
         }
       }
 
+      const geoCoord = { latitude: lat, longitude: lng, lat, lng };
+
       const forecast = await sharedOpenMeteoProvider.fetchForecast({
-        coordinates: { latitude: lat, longitude: lng },
+        coordinates: geoCoord,
         lookaheadHours: hours,
       });
 
@@ -1275,7 +1283,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Retrieve active verified external advisories, meteorological alerts, or environmental warnings.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 8000,
     auditRequired: false,
     handler: async (args) => {
@@ -1284,7 +1292,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         const lat = typeof args.latitude === 'number' ? args.latitude : 15.2993;
         const lng = typeof args.longitude === 'number' ? args.longitude : 74.124;
         activeEvents = await sharedFixtureProvider.fetchActiveAlerts({
-          coordinates: { latitude: lat, longitude: lng },
+          coordinates: { latitude: lat, longitude: lng, lat, lng },
         });
       }
 
@@ -1292,7 +1300,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         factId: `FACT-EVENT-${ev.id}`,
         sourceType: 'EXTERNAL_EVENT',
         sourceEntityId: ev.id,
-        sourceTimestamp: ev.updatedAt,
+        sourceTimestamp: ev.updatedAt || ev.normalizedAt,
         label: `External Alert: [${ev.severity}] ${ev.title}`,
         authoritativeValue: `${ev.severity}:${ev.category}`,
       }));
@@ -1313,7 +1321,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Retrieve verified external event impacts specifically evaluated on an authorized journey.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 4000,
     auditRequired: false,
     handler: async (args, ctx) => {
@@ -1325,8 +1333,8 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         factId: `FACT-IMPACT-${imp.id}`,
         sourceType: 'IMPACT_ANALYSIS',
         sourceEntityId: imp.id,
-        sourceTimestamp: imp.evaluatedAt,
-        label: `Impact on ${imp.activityTitle}: ${imp.recommendedAction} (Severity: ${imp.severity})`,
+        sourceTimestamp: imp.assessedAt,
+        label: `Impact on ${imp.activityTitle || imp.affectedItemTitles[0]}: ${imp.recommendedAction || 'ACTION_RECOMMENDED'} (Severity: ${imp.severity})`,
         authoritativeValue: imp.severity,
       }));
 
@@ -1348,7 +1356,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Retrieve detailed provenance, validity window, parameters, and affected zones for an external event.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 4000,
     auditRequired: false,
     handler: async (args) => {
@@ -1360,7 +1368,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
       let ev = sharedExternalEventImpactCoordinator.getEventById(eventId);
       if (!ev) {
         const fixtureAlerts = await sharedFixtureProvider.fetchActiveAlerts({
-          coordinates: { latitude: 15.2993, longitude: 74.124 },
+          coordinates: { latitude: 15.2993, longitude: 74.124, lat: 15.2993, lng: 74.124 },
         });
         ev = fixtureAlerts.find((a) => a.id === eventId);
       }
@@ -1369,13 +1377,17 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         throw new Error(`EVENT_NOT_FOUND: External event "${eventId}" was not found.`);
       }
 
+      const validFromStr = ev.validFrom || ev.effectiveFrom;
+      const validToStr = ev.validTo || ev.effectiveUntil;
+      const provName = ev.provenance.providerName || ev.provider;
+
       const facts: GroundedFactReference[] = [
         {
           factId: `FACT-EVENT-${ev.id}`,
           sourceType: 'EXTERNAL_EVENT',
           sourceEntityId: ev.id,
-          sourceTimestamp: ev.updatedAt,
-          label: `${ev.title} (${ev.severity}) - Valid ${ev.validFrom} to ${ev.validTo}`,
+          sourceTimestamp: ev.updatedAt || ev.normalizedAt,
+          label: `${ev.title} (${ev.severity}) - Valid ${validFromStr} to ${validToStr}`,
           authoritativeValue: ev.severity,
         },
       ];
@@ -1384,7 +1396,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         data: {
           event: ev,
         },
-        summary: `Event ${ev.id}: ${ev.title}. Severity: ${ev.severity}. Valid until ${ev.validTo}. Provenance: ${ev.provenance.providerName} (${ev.provenance.freshness}).`,
+        summary: `Event ${ev.id}: ${ev.title}. Severity: ${ev.severity}. Valid until ${validToStr}. Provenance: ${provName} (${ev.freshness}).`,
         facts,
       };
     },
@@ -1395,7 +1407,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Retrieve health telemetry, sync status, latency, and freshness reports for integrated external providers.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 4000,
     auditRequired: false,
     handler: async (args) => {
@@ -1432,7 +1444,7 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
     description:
       'Generate a grounded, deterministic explanation of how an external weather event affects journey activities, what is preserved, and alternatives.',
     permissionLevel: 'READ_ONLY',
-    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'guide'],
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
     timeoutMs: 4000,
     auditRequired: false,
     handler: async (args, ctx) => {
@@ -1455,41 +1467,48 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
         };
       }
 
-      const affectedItem = snapshot.items.find((i) => i.id === relevantImpact.activityId);
-      const preservedItems = snapshot.items.filter((i) => i.id !== relevantImpact.activityId && i.status !== 'cancelled');
+      const actId = relevantImpact.activityId || relevantImpact.affectedItemIds[0];
+      const actTitle = relevantImpact.activityTitle || relevantImpact.affectedItemTitles[0];
+      const evTitle = relevantImpact.eventTitle || relevantImpact.event?.title || 'Weather Event';
+      const evSeverity = relevantImpact.eventSeverity || relevantImpact.severity;
+      const impReason = relevantImpact.impactReason || 'Atmospheric conditions exceed safety limits for this activity.';
+      const recAction = relevantImpact.recommendedAction || 'REVIEW_ALTERNATIVES';
+      const assessedIso = relevantImpact.assessedAt || new Date().toISOString();
+
+      const preservedItems = snapshot.items.filter((i) => i.id !== actId && i.status !== 'cancelled');
 
       const facts: GroundedFactReference[] = [
         {
           factId: `FACT-IMPACT-${relevantImpact.id}`,
           sourceType: 'IMPACT_ANALYSIS',
           sourceEntityId: relevantImpact.id,
-          sourceTimestamp: relevantImpact.evaluatedAt,
-          label: `Weather impact on ${relevantImpact.activityTitle}: ${relevantImpact.impactReason}`,
+          sourceTimestamp: assessedIso,
+          label: `Weather impact on ${actTitle}: ${impReason}`,
           authoritativeValue: relevantImpact.severity,
         },
         {
           factId: `FACT-EVENT-${relevantImpact.eventId}`,
           sourceType: 'EXTERNAL_EVENT',
           sourceEntityId: relevantImpact.eventId,
-          sourceTimestamp: relevantImpact.evaluatedAt,
-          label: `Causing event: ${relevantImpact.eventTitle}`,
-          authoritativeValue: relevantImpact.eventSeverity,
+          sourceTimestamp: assessedIso,
+          label: `Causing event: ${evTitle}`,
+          authoritativeValue: evSeverity,
         },
       ];
 
       return {
         data: {
           journeyId,
-          affectedActivityId: relevantImpact.activityId,
-          affectedActivityTitle: relevantImpact.activityTitle,
-          eventTitle: relevantImpact.eventTitle,
+          affectedActivityId: actId,
+          affectedActivityTitle: actTitle,
+          eventTitle: evTitle,
           severity: relevantImpact.severity,
-          impactReason: relevantImpact.impactReason,
-          recommendedAction: relevantImpact.recommendedAction,
+          impactReason: impReason,
+          recommendedAction: recAction,
           preservedActivities: preservedItems.map((p) => p.title),
           proposal: proposal || null,
         },
-        summary: `Due to ${relevantImpact.eventTitle} (${relevantImpact.eventSeverity}), "${relevantImpact.activityTitle}" is disrupted (${relevantImpact.recommendedAction}). ${preservedItems.length} activities remain unaffected and safe.`,
+        summary: `Due to ${evTitle} (${evSeverity}), "${actTitle}" is disrupted (${recAction}). ${preservedItems.length} activities remain unaffected and safe.`,
         facts,
       };
     },
@@ -1497,6 +1516,12 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
 };
 
 export class AiToolRegistry {
+  private engine?: LivingJourneyEngine;
+
+  constructor(engine?: LivingJourneyEngine) {
+    this.engine = engine;
+  }
+
   public isAllowlistedTool(toolName: string): toolName is AiToolName {
     return Object.prototype.hasOwnProperty.call(AI_TOOL_DEFINITIONS, toolName);
   }
@@ -1604,9 +1629,14 @@ export class AiToolRegistry {
       };
     }
 
+    const effectiveCtx: ToolExecutionContext = {
+      ...ctx,
+      engine: ctx.engine || this.engine,
+    };
+
     try {
       const rawOutput = await Promise.race<ToolHandlerOutput>([
-        def.handler(toolArgs, ctx),
+        def.handler(toolArgs, effectiveCtx),
         new Promise<ToolHandlerOutput>((_, reject) =>
           setTimeout(
             () => reject(new Error(`TOOL_TIMEOUT: ${toolName} timed out.`)),

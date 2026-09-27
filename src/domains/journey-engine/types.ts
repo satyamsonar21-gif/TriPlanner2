@@ -563,6 +563,7 @@ export interface EngineChangeRequest {
   id: string;
   idempotencyKey: string;
   journeyId: string;
+  affectedItemId?: string;
   expectedJourneyVersion: number;
   appliedJourneyVersion?: number;
   state: ChangeRequestState;

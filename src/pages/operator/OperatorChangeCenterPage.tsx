@@ -19,6 +19,7 @@ import {
 } from '@/domains/journey-engine';
 import { ChangeReviewPanel } from '@/components/journey-engine';
 import { OperatorAiCopilotPanel } from '@/components/ai';
+import { OperatorExternalConditionsPanel } from '@/components/external-events/OperatorExternalConditionsPanel';
 import { GOA_JOURNEY_ITINERARY_STOPS, JourneyService } from '@/domains/journeys/journey.service';
 
 export const OperatorChangeCenterPage: React.FC = () => {
@@ -76,6 +77,18 @@ export const OperatorChangeCenterPage: React.FC = () => {
     });
     setSnapshot(sharedLivingJourneyEngine.getSnapshot('jrn_goa_01')!);
     setChangeRequest(freshReq);
+  };
+
+  const handleExternalDisruptionTriggered = () => {
+    const updatedSnap = sharedLivingJourneyEngine.getSnapshot('jrn_goa_01');
+    if (updatedSnap) {
+      setSnapshot(updatedSnap);
+    }
+    const reqs = sharedLivingJourneyEngine.getChangeRequestsForJourney('jrn_goa_01');
+    const latestReq = reqs[reqs.length - 1];
+    if (latestReq) {
+      setChangeRequest(latestReq);
+    }
   };
 
   return (
@@ -174,6 +187,11 @@ export const OperatorChangeCenterPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Phase 06: Real-Time Environmental & Weather Intelligence */}
+      <OperatorExternalConditionsPanel
+        onTriggerDisruption={handleExternalDisruptionTriggered}
+      />
 
       {/* Main Change Review Panel (Operator Mode) */}
       <ChangeReviewPanel

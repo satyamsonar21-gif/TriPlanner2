@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   Wind,
   ShieldCheck,
-  ExternalLink,
   ChevronRight,
   Info,
   Clock,

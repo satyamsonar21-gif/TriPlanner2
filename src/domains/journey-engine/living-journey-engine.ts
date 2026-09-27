@@ -507,6 +507,7 @@ export class LivingJourneyEngine
       id: changeRequestId,
       idempotencyKey,
       journeyId: snapshot.journeyId,
+      affectedItemId: trigger.affectedItemId,
       expectedJourneyVersion: snapshot.version,
       state: 'DRAFT',
       trigger,

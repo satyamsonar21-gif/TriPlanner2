@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { OperatorAiCopilotPanel } from '@/components/ai';
+import { OperatorExternalConditionsPanel } from '@/components/external-events/OperatorExternalConditionsPanel';
 
 export const OperatorDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -149,6 +150,11 @@ export const OperatorDashboardPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Phase 06: Real-Time Environmental & Weather Intelligence */}
+      <OperatorExternalConditionsPanel
+        onTriggerDisruption={() => navigate('/operator/changes')}
+      />
 
       {/* Phase 05: Operator AI Operations Copilot */}
       <OperatorAiCopilotPanel

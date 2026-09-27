@@ -1,5 +1,5 @@
 import { calculateHaversineDistanceMeters } from '@/domains/geo/normalization';
-import type { ItineraryItem, JourneySnapshot } from '@/domains/journey-engine/types';
+import type { JourneySnapshot, JourneySnapshotItem } from '@/domains/journey-engine/types';
 import type {
   ActivityWeatherSensitivity,
   ExternalEvent,
@@ -20,9 +20,9 @@ export class JourneyRelevanceEngine {
    * Deterministically classifies an activity's sensitivity to atmospheric/marine conditions.
    */
   public static classifyActivitySensitivity(
-    item: ItineraryItem
+    item: JourneySnapshotItem
   ): ActivityWeatherSensitivity {
-    const tags = (item.categoryTags || []).map((t) => t.toLowerCase());
+    const tags = (item.categoryTags || []).map((t: string) => t.toLowerCase());
     const title = item.title.toLowerCase();
     const type = item.type;
 
@@ -36,7 +36,7 @@ export class JourneyRelevanceEngine {
     }
 
     if (
-      tags.some((t) =>
+      tags.some((t: string) =>
         ['water sports', 'diving', 'scuba', 'kayaking', 'sailing', 'boat', 'marine', 'cruise'].includes(t)
       ) ||
       title.includes('scuba') ||
@@ -50,7 +50,7 @@ export class JourneyRelevanceEngine {
     }
 
     if (
-      tags.some((t) =>
+      tags.some((t: string) =>
         ['beaches', 'adventure', 'hiking', 'trekking', 'cycling', 'outdoor'].includes(t)
       ) ||
       title.includes('beach') ||
@@ -61,7 +61,7 @@ export class JourneyRelevanceEngine {
     }
 
     if (
-      tags.some((t) =>
+      tags.some((t: string) =>
         ['heritage', 'sightseeing', 'monument', 'fort', 'market', 'walking tour'].includes(t)
       ) ||
       title.includes('fort') ||
@@ -80,18 +80,29 @@ export class JourneyRelevanceEngine {
    */
   public static evaluateSpatialOverlap(
     event: ExternalEvent,
-    item: ItineraryItem
+    item: JourneySnapshotItem
   ): { overlap: boolean; distanceMeters: number } {
-    if (!item.location || !item.location.coordinate) {
+    const itemLat = item.location?.coordinate
+      ? item.location.coordinate.lat
+      : item.location?.latitude;
+    const itemLng = item.location?.coordinate
+      ? item.location.coordinate.lng
+      : item.location?.longitude;
+
+    if (typeof itemLat !== 'number' || typeof itemLng !== 'number') {
       return { overlap: false, distanceMeters: Infinity };
     }
 
+    const eventLat = event.latitude ?? event.coordinates?.latitude ?? 0;
+    const eventLng = event.longitude ?? event.coordinates?.longitude ?? 0;
+
     const distanceMeters = calculateHaversineDistanceMeters(
-      { latitude: event.latitude, longitude: event.longitude },
-      item.location.coordinate
+      { latitude: eventLat, longitude: eventLng },
+      { latitude: itemLat, longitude: itemLng, lat: itemLat, lng: itemLng }
     );
 
-    const overlap = distanceMeters <= event.radiusMeters;
+    const radius = event.radiusMeters || 25000;
+    const overlap = distanceMeters <= radius;
     return { overlap, distanceMeters };
   }
 
@@ -100,14 +111,16 @@ export class JourneyRelevanceEngine {
    */
   public static evaluateTemporalOverlap(
     event: ExternalEvent,
-    item: ItineraryItem
+    item: JourneySnapshotItem
   ): boolean {
     if (!item.startTimeIso || !item.endTimeIso) {
       return false;
     }
 
-    const eventStart = Date.parse(event.effectiveFrom);
-    const eventEnd = Date.parse(event.effectiveUntil);
+    const effFrom = event.effectiveFrom || event.validFrom || '';
+    const effUntil = event.effectiveUntil || event.validTo || '';
+    const eventStart = Date.parse(effFrom);
+    const eventEnd = Date.parse(effUntil);
     const itemStart = Date.parse(item.startTimeIso);
     const itemEnd = Date.parse(item.endTimeIso);
 
@@ -144,8 +157,18 @@ export class JourneyRelevanceEngine {
       };
     }
 
-    const isSevere = event.severity === 'HIGH' || event.severity === 'CRITICAL';
-    const isModerate = event.severity === 'MEDIUM';
+    const sev = (event.severity || '').toString().toUpperCase();
+    const isSevere =
+      sev === 'HIGH' ||
+      sev === 'CRITICAL' ||
+      sev === 'WARNING' ||
+      sev === 'SEVERE' ||
+      sev === 'EMERGENCY' ||
+      sev === 'EXTREME';
+    const isModerate =
+      sev === 'MEDIUM' ||
+      sev === 'MODERATE' ||
+      sev === 'ADVISORY';
 
     // 1. Marine / High-Wind / Swell on Marine activities
     if (
@@ -293,6 +316,16 @@ export class JourneyRelevanceEngine {
           requiresHumanApproval: impactClass.requiresApproval,
           proposalGenerated: false,
           assessedAt: new Date().toISOString(),
+          activityId: item.id,
+          activityTitle: item.title,
+          eventTitle: event.title,
+          eventSeverity: event.severity,
+          impactReason: impactClass.reason,
+          recommendedAction:
+            impactClass.recommendedTrigger === 'ITEM_CANCELLED'
+              ? 'CANCEL_OR_REPLACE'
+              : 'ADAPT_TIME',
+          evaluatedAt: new Date().toISOString(),
         });
       }
     }

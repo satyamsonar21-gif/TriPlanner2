@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Activity,
   AlertTriangle,
   CheckCircle2,
   RefreshCw,
@@ -20,7 +19,14 @@ import type {
   ExternalEvent,
   ProviderHealthReport,
 } from '@/domains/external-events/types';
-import { GOA_COORDINATES } from '@/domains/geo/normalization';
+import type { GeoCoordinate } from '@/domains/geo/types';
+
+const GOA_COORDINATES: GeoCoordinate = {
+  latitude: 15.2993,
+  longitude: 74.124,
+  lat: 15.2993,
+  lng: 74.124,
+};
 
 export interface OperatorExternalConditionsPanelProps {
   onTriggerDisruption?: () => void;
@@ -78,13 +84,29 @@ export const OperatorExternalConditionsPanel: React.FC<
           'Dangerous sea conditions and coastal wind gusts exceeding 38 km/h. Sea water sports, diving, and open sea kayaking strictly suspended along North Goa coast.',
         severity: 'WARNING',
         status: 'ACTIVE',
+        observedAt: now.toISOString(),
+        effectiveFrom: now.toISOString(),
+        effectiveUntil: validTo.toISOString(),
         validFrom: now.toISOString(),
         validTo: validTo.toISOString(),
+        latitude: GOA_COORDINATES.latitude,
+        longitude: GOA_COORDINATES.longitude,
         coordinates: GOA_COORDINATES,
         radiusMeters: 25000,
+        confidence: 0.95,
+        normalizedAt: now.toISOString(),
+        expiresAt: validTo.toISOString(),
+        freshness: 'FRESH',
         provenance: {
+          provider: 'Indian Meteorological Department',
           providerName: 'IMD Coastal Advisory Feed',
+          providerEventId: 'IMD-MA-2026-GOA-08',
+          observedAt: now.toISOString(),
           retrievedAt: now.toISOString(),
+          location: GOA_COORDINATES,
+          dataVersion: 1,
+          expiresAt: validTo.toISOString(),
+          confidenceScore: 0.95,
           freshness: 'FRESH',
           rawPayloadHash: 'hash_goa_wind_advisory',
           sourceEndpoint: 'https://api.met.gov.in/v1/coastal-bulletin',
@@ -190,7 +212,7 @@ export const OperatorExternalConditionsPanel: React.FC<
                     report.status === 'HEALTHY'
                       ? 'confirmed'
                       : report.status === 'DEGRADED'
-                      ? 'warning'
+                      ? 'brass'
                       : 'disrupted'
                   }
                   className="text-[10px] font-mono uppercase"
@@ -281,11 +303,21 @@ export const OperatorExternalConditionsPanel: React.FC<
                     </p>
 
                     <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono text-[#8A7B75] pt-1">
-                      <span>Coordinates: {event.coordinates.latitude.toFixed(3)}, {event.coordinates.longitude.toFixed(3)}</span>
+                      <span>
+                        Coordinates:{' '}
+                        {(event.coordinates?.latitude ?? event.latitude ?? 15.299).toFixed(3)},{' '}
+                        {(event.coordinates?.longitude ?? event.longitude ?? 74.124).toFixed(3)}
+                      </span>
                       <span>•</span>
                       <span>Radius: {((event.radiusMeters || 25000) / 1000).toFixed(0)} km</span>
                       <span>•</span>
-                      <span>Valid to: {new Date(event.validTo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>
+                        Valid to:{' '}
+                        {new Date(event.validTo || event.effectiveUntil || Date.now()).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
                     </div>
                   </div>
 

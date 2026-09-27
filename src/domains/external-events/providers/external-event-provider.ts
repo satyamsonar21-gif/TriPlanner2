@@ -47,7 +47,11 @@ export class ProviderHealthTracker {
   private rateLimitHits = 0;
   private latestErrorMessage?: string;
 
-  constructor(public readonly providerName: string) {}
+  public readonly providerName: string;
+
+  constructor(providerName: string) {
+    this.providerName = providerName;
+  }
 
   public recordSuccess(latencyMs: number): void {
     this.totalRequests++;
