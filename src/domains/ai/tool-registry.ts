@@ -26,6 +26,14 @@ import {
   sharedFixtureProvider,
   sharedOpenMeteoProvider,
 } from '@/domains/external-events/providers/external-event-provider';
+import { BookingService } from '@/domains/bookings/booking.service';
+import { PaymentService } from '@/domains/payments/payment.service';
+import { RefundService } from '@/domains/refunds/refund.service';
+import { SupplierService } from '@/domains/suppliers/supplier.service';
+import { CancellationPolicyEngine } from '@/domains/refunds/policy-engine';
+import { PricingEngine } from '@/domains/pricing/pricing-engine';
+import type { RefundRecord } from '@/domains/refunds/types';
+import { sharedCommunicationOrchestrator } from '@/domains/communications';
 import type {
   AiErrorCategory,
   AiToolExecutionTrace,
@@ -1509,6 +1517,283 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
           proposal: proposal || null,
         },
         summary: `Due to ${evTitle} (${evSeverity}), "${actTitle}" is disrupted (${recAction}). ${preservedItems.length} activities remain unaffected and safe.`,
+        facts,
+      };
+    },
+  },
+
+  get_payment_status: {
+    name: 'get_payment_status',
+    description: 'Retrieve authoritative payment intent, status, amount, and gateway record.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const paymentIntentId = args.paymentIntentId as string | undefined;
+      const paymentRecordId = args.paymentRecordId as string | undefined;
+      const bookingId = args.bookingId as string | undefined;
+
+      let record = paymentRecordId ? PaymentService.getRecord(paymentRecordId) : undefined;
+      let intent = paymentIntentId ? PaymentService.getIntent(paymentIntentId) : undefined;
+
+      if (!record && !intent && bookingId) {
+        const booking = BookingService.getBooking(bookingId);
+        if (booking) {
+          if (booking.paymentRecordId) {
+            record = PaymentService.getRecord(booking.paymentRecordId);
+          }
+          if (booking.paymentIntentId) {
+            intent = PaymentService.getIntent(booking.paymentIntentId);
+          }
+        }
+      }
+
+      const status = record?.status || intent?.state || 'UNKNOWN';
+      const amountMinor = record?.amountMinor || intent?.amountMinor || 0;
+      const currency = record?.currency || intent?.currency || 'INR';
+      const formatted = PricingEngine.formatMoney({ amountMinor, currency });
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-PAYMENT-${record?.id || intent?.id || 'none'}`,
+          sourceType: 'PAYMENT_RECORD',
+          sourceEntityId: record?.id || intent?.id || 'unknown',
+          sourceTimestamp: record?.capturedAt || intent?.updatedAt || new Date().toISOString(),
+          label: `Payment Status: ${status}`,
+          authoritativeValue: `${status} (${formatted})`,
+        },
+      ];
+
+      return {
+        data: {
+          status,
+          amountMinor,
+          amountFormatted: formatted,
+          currency,
+          paymentIntentId: intent?.id,
+          paymentRecordId: record?.id,
+          provider: intent?.provider || 'MOCK_GATEWAY',
+          gatewayReference: record?.gatewayReference,
+        },
+        summary: `Payment status is ${status} with amount ${formatted}.`,
+        facts,
+      };
+    },
+  },
+
+  get_refund_status: {
+    name: 'get_refund_status',
+    description: 'Retrieve authoritative refund records, amounts, fee deductions, and refund states.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const refundId = args.refundId as string | undefined;
+      const bookingId = args.bookingId as string | undefined;
+      const paymentId = args.paymentId as string | undefined;
+
+      let refunds: RefundRecord[] = [];
+      if (refundId) {
+        const r = RefundService.getRefund(refundId);
+        if (r) refunds.push(r);
+      } else if (bookingId) {
+        refunds = RefundService.getRefundsForBooking(bookingId);
+      } else if (paymentId) {
+        refunds = RefundService.getRefundsForPayment(paymentId);
+      }
+
+      const totalRefundedMinor = refunds.reduce((sum, r) => sum + r.amountMinor, 0);
+      const currency = refunds[0]?.currency || 'INR';
+      const formatted = PricingEngine.formatMoney({ amountMinor: totalRefundedMinor, currency });
+
+      const facts: GroundedFactReference[] = refunds.map((r) => ({
+        factId: `FACT-REFUND-${r.id}`,
+        sourceType: 'REFUND_RECORD',
+        sourceEntityId: r.id,
+        sourceTimestamp: r.createdAt,
+        label: `Refund ${r.id}: ${r.state}`,
+        authoritativeValue: `${r.state} (${PricingEngine.formatMoney({ amountMinor: r.amountMinor, currency: r.currency })})`,
+      }));
+
+      return {
+        data: {
+          refundsCount: refunds.length,
+          totalRefundedMinor,
+          totalRefundedFormatted: formatted,
+          refunds,
+        },
+        summary: `Found ${refunds.length} refund record(s) totaling ${formatted}.`,
+        facts,
+      };
+    },
+  },
+
+  get_supplier_status: {
+    name: 'get_supplier_status',
+    description: 'Retrieve supplier details, status, service type, and confirmed booking allocations.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin', 'vendor'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const supplierId = (args.supplierId as string) || 'sup_seashell_resort';
+      const supplier = SupplierService.getSupplier(supplierId);
+
+      if (!supplier) {
+        throw new Error(`SUPPLIER_NOT_FOUND: Supplier "${supplierId}" not found.`);
+      }
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-SUPPLIER-${supplier.id}`,
+          sourceType: 'SUPPLIER_RECORD',
+          sourceEntityId: supplier.id,
+          sourceTimestamp: supplier.updatedAt,
+          label: `${supplier.name} (${supplier.serviceType})`,
+          authoritativeValue: supplier.status,
+        },
+      ];
+
+      return {
+        data: {
+          supplierId: supplier.id,
+          name: supplier.name,
+          serviceType: supplier.serviceType,
+          status: supplier.status,
+          operationalTimezone: supplier.operationalTimezone,
+          capabilities: supplier.capabilities,
+        },
+        summary: `Supplier "${supplier.name}" is ${supplier.status} (${supplier.serviceType}).`,
+        facts,
+      };
+    },
+  },
+
+  get_booking_timeline: {
+    name: 'get_booking_timeline',
+    description: 'Retrieve immutable state audit history and event transitions for a booking.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const bookingId = args.bookingId as string;
+      const booking = BookingService.getBooking(bookingId);
+      if (!booking) {
+        throw new Error(`BOOKING_NOT_FOUND: Booking "${bookingId}" not found.`);
+      }
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-BOOKING-TIMELINE-${booking.id}`,
+          sourceType: 'BOOKING_RECORD',
+          sourceEntityId: booking.id,
+          sourceTimestamp: booking.updatedAt,
+          label: `Timeline for ${booking.bookingReference}`,
+          authoritativeValue: `${booking.state} (${booking.statusHistory.length} events)`,
+        },
+      ];
+
+      return {
+        data: {
+          bookingId: booking.id,
+          bookingReference: booking.bookingReference,
+          currentState: booking.state,
+          historyCount: booking.statusHistory.length,
+          timeline: booking.statusHistory,
+        },
+        summary: `Booking "${booking.bookingReference}" has ${booking.statusHistory.length} recorded transition(s); current state: ${booking.state}.`,
+        facts,
+      };
+    },
+  },
+
+  explain_booking_change: {
+    name: 'explain_booking_change',
+    description: 'Explain deterministic booking item replacements and price deltas caused by disruptions.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      const journeyId = (args.journeyId as string) || 'jrn_goa_01';
+      const changeRequestId = args.changeRequestId as string | undefined;
+
+      const engine = ctx.engine || sharedLivingJourneyEngine;
+      const changeReq = changeRequestId
+        ? engine.getChangeRequest(changeRequestId)
+        : engine.getChangeRequestsForJourney(journeyId)[0];
+
+      const bestAlt = changeReq?.scoredAlternatives[0];
+      const altTitle = bestAlt?.candidate.title || 'Alternative Activity';
+      const priceDelta = bestAlt?.priceDelta || 0;
+      const formattedDelta = priceDelta < 0 ? `-₹${Math.abs(priceDelta)}` : `+₹${priceDelta}`;
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-BOOKING-CHANGE-${changeReq?.id || 'none'}`,
+          sourceType: 'CHANGE_REQUEST',
+          sourceEntityId: changeReq?.id || 'unknown',
+          sourceTimestamp: changeReq?.createdAt || new Date().toISOString(),
+          label: `Replacement Activity: ${altTitle}`,
+          authoritativeValue: `Price delta: ${formattedDelta}`,
+        },
+      ];
+
+      return {
+        data: {
+          journeyId,
+          changeRequestId: changeReq?.id,
+          triggerReason: changeReq?.trigger.reason || 'Operational adaptation',
+          replacementTitle: altTitle,
+          priceDelta,
+          priceDeltaFormatted: formattedDelta,
+          refundEligible: priceDelta < 0,
+        },
+        summary: `Booking alteration: "${altTitle}" selected due to ${changeReq?.trigger.reason || 'disruption'}. Net price change: ${formattedDelta}.`,
+        facts,
+      };
+    },
+  },
+
+  explain_refund_calculation: {
+    name: 'explain_refund_calculation',
+    description: 'Explain cancellation policy calculations, penalty percentages, and refundable amounts.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const bookingId = args.bookingId as string | undefined;
+      const booking = bookingId ? BookingService.getBooking(bookingId) : undefined;
+      const paidAmountMinor = booking?.totalAmountMinor || 1748000;
+      const isSupplierInitiated = (args.isSupplierInitiated as boolean) ?? false;
+
+      const calc = CancellationPolicyEngine.calculateRefund({
+        paidAmountMinor,
+        previouslyRefundedMinor: 0,
+        serviceDateIso: (args.serviceDateIso as string) || new Date(Date.now() + 72 * 3600000).toISOString(),
+        nowIso: args.nowIso as string | undefined,
+        isSupplierInitiated,
+        currency: booking?.currency || 'INR',
+      });
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-REFUND-CALC-${bookingId || 'standard'}`,
+          sourceType: 'REFUND_RECORD',
+          sourceEntityId: bookingId || 'policy_calc',
+          sourceTimestamp: new Date().toISOString(),
+          label: `Refund Policy: ${calc.policyReference}`,
+          authoritativeValue: `Refundable: ₹${calc.refundableAmountMinor / 100}`,
+        },
+      ];
+
+      return {
+        data: { ...calc } as unknown as Record<string, unknown>,
+        summary: `Refund calculation: ${calc.reason}. Refundable amount: ₹${calc.refundableAmountMinor / 100} (Penalty: ₹${calc.penaltyFeeMinor / 100}).`,
         facts,
       };
     },

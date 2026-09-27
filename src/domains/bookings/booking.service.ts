@@ -99,12 +99,12 @@ export class BookingService {
       { currency }
     );
 
-    const priceSnapshot = PricingEngine.createPriceSnapshot(
-      priceBreakdown,
-      req.actorId,
-      req.journeyId,
-      req.expectedJourneyVersion || 18
-    );
+    const priceSnapshot = PricingEngine.createPriceSnapshot({
+      breakdown: priceBreakdown,
+      journeyId: req.journeyId,
+      journeyVersion: req.expectedJourneyVersion || 18,
+      bookingId,
+    });
 
     // 4. Atomic Inventory Capacity Check & Reservation
     const reservationsMade: string[] = [];
@@ -143,7 +143,7 @@ export class BookingService {
         bookingId,
         tenantId,
         travelerId: req.travelerId,
-        amountMinor: priceSnapshot.totalAmountMinor,
+        amountMinor: priceSnapshot.breakdown.totalAmountMinor,
         currency,
         idempotencyKey: `pi_${req.idempotencyKey}`,
       });
@@ -167,7 +167,7 @@ export class BookingService {
       travelerId: req.travelerId,
       bookingReference: bookingRef,
       state: 'PAYMENT_PENDING',
-      totalAmountMinor: priceSnapshot.totalAmountMinor,
+      totalAmountMinor: priceSnapshot.breakdown.totalAmountMinor,
       currency,
       idempotencyKey: req.idempotencyKey,
       items,

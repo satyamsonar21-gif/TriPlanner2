@@ -1,9 +1,5 @@
 import React from 'react';
 import {
-  ShieldCheck,
-  Compass,
-  CloudSun,
-  Activity,
   ArrowRight,
 } from 'lucide-react';
 import { TravelAgentChatbox } from '@/components/ai-agent/TravelAgentChatbox';
@@ -39,63 +35,6 @@ export const PreferencesPage: React.FC = () => {
             <span>View Active Itinerary</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
-        </div>
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────── */}
-      {/* 2. REAL-TIME AGENT TELEMETRY STRIP                          */}
-      {/* ──────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-[#FFF9F3] border border-[#33231E]/10 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8A7B75] uppercase">
-            <Compass className="w-3.5 h-3.5 text-terracotta shrink-0" />
-            <span>Target Journey</span>
-          </div>
-          <div className="mt-2.5">
-            <span className="font-display text-base font-bold text-[#1C1410] block leading-snug">
-              Goa Getaway
-            </span>
-            <span className="text-[10px] text-terracotta font-mono mt-0.5 block">12 May – 16 May 2026</span>
-          </div>
-        </div>
-
-        <div className="bg-[#FFF9F3] border border-[#33231E]/10 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8A7B75] uppercase">
-            <CloudSun className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>Telemetry Link</span>
-          </div>
-          <div className="mt-2.5">
-            <span className="font-display text-base font-bold text-[#1C1410] block leading-snug">
-              31°C • Swell Alert
-            </span>
-            <span className="text-[10px] text-amber-700 font-mono mt-0.5 block">Mandovi Estuary Calm</span>
-          </div>
-        </div>
-
-        <div className="bg-[#FFF9F3] border border-[#33231E]/10 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8A7B75] uppercase">
-            <Activity className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>Graph Health</span>
-          </div>
-          <div className="mt-2.5">
-            <span className="font-display text-base font-bold text-emerald-700 block leading-snug">
-              100% Feasible
-            </span>
-            <span className="text-[10px] text-[#8A7B75] font-mono mt-0.5 block">0 Overlaps • 45m Buffers</span>
-          </div>
-        </div>
-
-        <div className="bg-[#FFF9F3] border border-[#33231E]/10 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8A7B75] uppercase">
-            <ShieldCheck className="w-3.5 h-3.5 text-antique-brass shrink-0" />
-            <span>Human-in-Loop</span>
-          </div>
-          <div className="mt-2.5">
-            <span className="font-display text-base font-bold text-[#1C1410] block leading-snug">
-              Approval Gate
-            </span>
-            <span className="text-[10px] text-[#8A7B75] font-mono mt-0.5 block">1-Tap Confirmation</span>
-          </div>
         </div>
       </div>
 

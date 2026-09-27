@@ -156,8 +156,8 @@ export const TravelAgentChatbox: React.FC<TravelAgentChatboxProps> = ({
 
   const [inputPrompt, setInputPrompt] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  // Default to showing memory panel on larger screens for executive workspace feel
-  const [showPreferencesDrawer, setShowPreferencesDrawer] = useState(true);
+  // Default to hidden to keep UI clean and uncluttered initially
+  const [showPreferencesDrawer, setShowPreferencesDrawer] = useState(false);
   const [context, setContext] = useState<AgentContext>(TravelAgentService.getContext());
   const [cardStatus, setCardStatus] = useState<Record<string, string>>({});
 

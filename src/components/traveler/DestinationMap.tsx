@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Map, { Marker, NavigationControl, Source, Layer } from 'react-map-gl';
+import Map, { Marker, NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { WeatherService } from '@/domains/weather/weather.service';
 import { MapPin, Navigation } from 'lucide-react';

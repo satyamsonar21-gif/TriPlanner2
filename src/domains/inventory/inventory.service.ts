@@ -139,8 +139,6 @@ export class InventoryService {
   }
 
   public static resetFixtures(): void {
-    for (const fixture of GOA_INVENTORY_FIXTURES) {
-      sharedInventoryStore.registerItem(fixture);
-    }
+    sharedInventoryStore.reset(GOA_INVENTORY_FIXTURES);
   }
 }

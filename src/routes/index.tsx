@@ -28,7 +28,9 @@ import { NotificationsPage } from '@/pages/traveler/NotificationsPage';
 import { SupportPage } from '@/pages/traveler/SupportPage';
 import { OperatorDashboardPage } from '@/pages/operator/OperatorDashboardPage';
 import { OperatorChangeCenterPage } from '@/pages/operator/OperatorChangeCenterPage';
+import { OperatorBookingCenterPage } from '@/pages/operator/OperatorBookingCenterPage';
 import { VendorDashboardPage } from '@/pages/vendor/VendorDashboardPage';
+import { SupplierOperationsPage } from '@/pages/vendor/SupplierOperationsPage';
 import { PlaceholderPage } from '@/pages/common/PlaceholderPage';
 
 export const AppRoutes: React.FC = () => {
@@ -147,11 +149,11 @@ export const AppRoutes: React.FC = () => {
         />
         <Route
           path="/operator/bookings"
-          element={<PlaceholderPage title="Operator Bookings Registry" domain="bookings" />}
+          element={<OperatorBookingCenterPage />}
         />
         <Route
           path="/operator/bookings/:id"
-          element={<PlaceholderPage title="Operator Booking Detail" domain="bookings" />}
+          element={<OperatorBookingCenterPage />}
         />
         <Route
           path="/operator/customers"
@@ -202,11 +204,11 @@ export const AppRoutes: React.FC = () => {
         <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
         <Route
           path="/vendor/bookings"
-          element={<PlaceholderPage title="Vendor Booking Requests" domain="bookings" />}
+          element={<SupplierOperationsPage />}
         />
         <Route
           path="/vendor/availability"
-          element={<PlaceholderPage title="Inventory & Capacity Management" domain="vendors" />}
+          element={<SupplierOperationsPage />}
         />
         <Route
           path="/vendor/messages"

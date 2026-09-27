@@ -16,6 +16,10 @@ import { SupplierService } from '@/domains/suppliers/supplier.service';
 import { RefundService } from '@/domains/refunds/refund.service';
 import { AuditService } from '@/domains/audit/audit.service';
 import type { RefundRecord } from '@/domains/refunds/types';
+import {
+  sharedCommunicationOrchestrator,
+  CommunicationEventFactory,
+} from '@/domains/communications';
 
 export interface DisruptionAnalysisResult {
   journeyId: string;
@@ -142,6 +146,43 @@ export class JourneyBookingCoordinator {
         reason: params.disruptionReason,
         alternativeId: bestAlt.id,
         refundOwedMinor,
+      }
+    );
+
+    // Emit Phase 08 Communication Event for Disruption Detection
+    await sharedCommunicationOrchestrator.ingestEvent(
+      CommunicationEventFactory.createEvent({
+        eventType: 'itinerary_item_cancelled',
+        tenantId: targetBooking.tenantId || 'org_goa_ops_01',
+        journeyId: params.journeyId,
+        bookingId: targetBooking.id,
+        actorId: params.actorId,
+        sourceDomain: 'bookings',
+        aggregateType: 'Booking',
+        aggregateId: targetBooking.id,
+        correlationId: `corr_disrupt_${params.journeyId}_${targetBooking.journeyVersion}`,
+        severity: 'HIGH',
+        priority: 'CRITICAL',
+        payload: {
+          title: disruptedItem.title,
+          itemTitle: disruptedItem.title,
+          reason: params.disruptionReason,
+          disruptionReason: params.disruptionReason,
+          journeyTitle: 'Goa Getaway',
+          travelerId: targetBooking.travelerId,
+          supplierId: params.supplierId,
+          bestAlternativeTitle: bestAlt.candidate.title,
+        },
+        idempotencyKey: `comm_disrupt_${params.journeyId}_${params.disruptedItemId}_${targetBooking.journeyVersion}`,
+        requiredAction: 'Review and approve proposed replacement',
+      }),
+      {
+        tenantId: targetBooking.tenantId || 'org_goa_ops_01',
+        journeyId: params.journeyId,
+        bookingId: targetBooking.id,
+        travelerId: targetBooking.travelerId,
+        operatorId: 'usr_operator_01',
+        supplierId: params.supplierId,
       }
     );
 
@@ -326,6 +367,75 @@ export class JourneyBookingCoordinator {
         refundMinor: refundRecord?.amountMinor ?? 0,
       }
     );
+
+    // Emit Phase 08 Communication Event for Disruption Resolved / Change Applied
+    await sharedCommunicationOrchestrator.ingestEvent(
+      CommunicationEventFactory.createEvent({
+        eventType: 'change_applied',
+        tenantId: booking.tenantId || 'org_goa_ops_01',
+        journeyId: booking.journeyId,
+        bookingId: booking.id,
+        actorId: params.actorId,
+        sourceDomain: 'journey-engine',
+        aggregateType: 'Journey',
+        aggregateId: booking.journeyId,
+        correlationId: `corr_disrupt_${booking.journeyId}_${applyRes.updatedSnapshot.version}`,
+        severity: 'LOW',
+        priority: 'HIGH',
+        payload: {
+          title: 'Scuba Diving Excursion',
+          itemTitle: 'Scuba Diving Excursion',
+          replacementTitle: alt.candidate.title,
+          originalPriceMinor: 520000,
+          replacementPriceMinor: (alt.candidate.priceAmount || 1500) * 100,
+          refundAmountMinor: refundRecord?.amountMinor ?? 0,
+          journeyTitle: 'Goa Getaway',
+          travelerId: booking.travelerId,
+        },
+        idempotencyKey: `comm_applied_${params.changeRequestId}_${params.alternativeId}`,
+      }),
+      {
+        tenantId: booking.tenantId || 'org_goa_ops_01',
+        journeyId: booking.journeyId,
+        bookingId: booking.id,
+        travelerId: booking.travelerId,
+        operatorId: params.actorId,
+      }
+    );
+
+    // If refund was processed, emit refund_succeeded event
+    if (refundRecord && refundRecord.state === 'SUCCEEDED') {
+      await sharedCommunicationOrchestrator.ingestEvent(
+        CommunicationEventFactory.createEvent({
+          eventType: 'refund_succeeded',
+          tenantId: booking.tenantId || 'org_goa_ops_01',
+          journeyId: booking.journeyId,
+          bookingId: booking.id,
+          actorId: params.actorId,
+          sourceDomain: 'refunds',
+          aggregateType: 'RefundRecord',
+          aggregateId: refundRecord.id,
+          correlationId: `corr_disrupt_${booking.journeyId}_${applyRes.updatedSnapshot.version}`,
+          severity: 'LOW',
+          priority: 'NORMAL',
+          payload: {
+            refundAmountMinor: refundRecord.amountMinor,
+            currency: refundRecord.currency,
+            bookingId: booking.id,
+            journeyTitle: 'Goa Getaway',
+            travelerId: booking.travelerId,
+          },
+          idempotencyKey: `comm_refund_${refundRecord.id}`,
+        }),
+        {
+          tenantId: booking.tenantId || 'org_goa_ops_01',
+          journeyId: booking.journeyId,
+          bookingId: booking.id,
+          travelerId: booking.travelerId,
+          operatorId: params.actorId,
+        }
+      );
+    }
 
     return {
       success: true,

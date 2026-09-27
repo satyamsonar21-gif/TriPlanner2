@@ -28,6 +28,17 @@ export class InventoryStore {
     this.inventories.set(item.id, structuredClone(item));
   }
 
+  public reset(initialItems?: SupplierInventoryItem[]): void {
+    this.inventories.clear();
+    this.reservations.clear();
+    this.reservationsByIdempotency.clear();
+    if (initialItems) {
+      for (const item of initialItems) {
+        this.inventories.set(item.id, structuredClone(item));
+      }
+    }
+  }
+
   public getItem(inventoryId: string): SupplierInventoryItem | undefined {
     const item = this.inventories.get(inventoryId);
     return item ? structuredClone(item) : undefined;

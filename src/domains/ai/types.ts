@@ -128,7 +128,14 @@ export type FactSourceType =
   | 'ROUTE_FEASIBILITY'
   | 'OPERATOR_QUEUE'
   | 'EXTERNAL_WEATHER'
-  | 'EXTERNAL_EVENT';
+  | 'EXTERNAL_EVENT'
+  | 'PAYMENT_RECORD'
+  | 'REFUND_RECORD'
+  | 'SUPPLIER_RECORD'
+  | 'INVENTORY_RECORD'
+  | 'COMMUNICATION_RECORD'
+  | 'NOTIFICATION_RECORD'
+  | 'OPERATIONAL_QUEUE_RECORD';
 
 export interface GroundedFactReference {
   factId: string;
@@ -166,7 +173,17 @@ export type AiToolName =
   | 'get_journey_external_impacts'
   | 'get_event_details'
   | 'get_provider_freshness'
-  | 'explain_weather_impact';
+  | 'explain_weather_impact'
+  | 'get_payment_status'
+  | 'get_refund_status'
+  | 'get_supplier_status'
+  | 'get_booking_timeline'
+  | 'explain_booking_change'
+  | 'explain_refund_calculation'
+  | 'get_traveler_notifications'
+  | 'get_operator_attention_queue'
+  | 'draft_disruption_communication'
+  | 'explain_notification';
 
 export interface AiToolCallRequest {
   toolName: AiToolName;

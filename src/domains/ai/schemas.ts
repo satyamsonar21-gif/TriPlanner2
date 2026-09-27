@@ -81,6 +81,16 @@ export const ALLOWLISTED_AI_TOOLS: ReadonlySet<AiToolName> = new Set([
   'get_event_details',
   'get_provider_freshness',
   'explain_weather_impact',
+  'get_payment_status',
+  'get_refund_status',
+  'get_supplier_status',
+  'get_booking_timeline',
+  'explain_booking_change',
+  'explain_refund_calculation',
+  'get_traveler_notifications',
+  'get_operator_attention_queue',
+  'draft_disruption_communication',
+  'explain_notification',
 ]);
 
 export const SUPPORTED_CURRENCIES: ReadonlySet<string> = new Set([
