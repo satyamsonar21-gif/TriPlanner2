@@ -31,7 +31,7 @@ import { TravelerAiCompanionPanel } from '@/components/ai';
 import { TravelerWeatherAlertBanner } from '@/components/external-events/TravelerWeatherAlertBanner';
 
 export const TravelerDashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [activeAlertModal, setActiveAlertModal] = useState(false);
   const [changeRequest, setChangeRequest] = useState<EngineChangeRequest>(() =>
@@ -336,8 +336,8 @@ export const TravelerDashboardPage: React.FC = () => {
           {/* REAL-TIME WEATHER INTEGRATION COMPONENT */}
           <DestinationWeatherWidget initialDestinationId="dest_goa_01" />
 
-          {/* MAPBOX INTERACTIVE DESTINATION MAP */}
-          <DestinationMap destinationId="dest_goa_01" />
+          {/* MAPBOX INTERACTIVE DESTINATION MAP WITH ORS ROUTING */}
+          <DestinationMap destinationId="dest_goa_01" originCity={profile?.origin_city || undefined} />
 
           {/* MY JOURNEYS LIST WIDGET */}
           <div className="space-y-3">
