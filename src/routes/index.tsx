@@ -29,6 +29,7 @@ import { SupportPage } from '@/pages/traveler/SupportPage';
 import { OperatorDashboardPage } from '@/pages/operator/OperatorDashboardPage';
 import { OperatorChangeCenterPage } from '@/pages/operator/OperatorChangeCenterPage';
 import { OperatorBookingCenterPage } from '@/pages/operator/OperatorBookingCenterPage';
+import { OperatorAttentionCenterPage } from '@/pages/operator/OperatorAttentionCenterPage';
 import { VendorDashboardPage } from '@/pages/vendor/VendorDashboardPage';
 import { SupplierOperationsPage } from '@/pages/vendor/SupplierOperationsPage';
 import { PlaceholderPage } from '@/pages/common/PlaceholderPage';
@@ -174,6 +175,14 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/operator/operations"
           element={<OperatorChangeCenterPage />}
+        />
+        <Route
+          path="/operator/attention"
+          element={<OperatorAttentionCenterPage />}
+        />
+        <Route
+          path="/operator/alerts"
+          element={<OperatorAttentionCenterPage />}
         />
         <Route
           path="/operator/changes"

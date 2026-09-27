@@ -1,7 +1,5 @@
 import type {
   NotificationPreferences,
-  NotificationCategory,
-  CommunicationChannel,
 } from './types';
 
 export class PreferenceService {

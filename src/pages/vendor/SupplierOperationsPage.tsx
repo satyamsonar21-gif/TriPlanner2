@@ -8,6 +8,7 @@ import {
 import { SupplierService } from '@/domains/suppliers/supplier.service';
 import { InventoryService } from '@/domains/inventory/inventory.service';
 import { sharedBookingStore } from '@/domains/bookings/booking-store';
+import { sharedCommunicationOrchestrator } from '@/domains/communications';
 
 export const SupplierOperationsPage: React.FC = () => {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('sup_baga_dive_center');
@@ -84,6 +85,33 @@ export const SupplierOperationsPage: React.FC = () => {
           <button onClick={() => setActionNotice(null)} className="text-xs font-bold underline">
             Dismiss
           </button>
+        </div>
+      )}
+
+      {/* Operational Communications & Allocation Alerts */}
+      {sharedCommunicationOrchestrator.getVendorNotifications(currentSupplier?.id || '').length > 0 && (
+        <div className="p-5 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+              Operational Alerts & Allocation Updates
+            </h2>
+            <span className="font-mono text-xs text-amber-800 font-semibold">
+              {sharedCommunicationOrchestrator.getVendorNotifications(currentSupplier?.id || '').length} update(s)
+            </span>
+          </div>
+          <div className="space-y-2">
+            {sharedCommunicationOrchestrator.getVendorNotifications(currentSupplier?.id || '').map((notif) => (
+              <div key={notif.id} className="p-3 bg-white rounded-xl border border-amber-100 flex items-start justify-between gap-3 text-xs">
+                <div>
+                  <span className="font-bold text-stone-900 block">{notif.title}</span>
+                  <p className="text-stone-600 mt-0.5">{notif.body}</p>
+                </div>
+                <span className="font-mono text-[10px] text-stone-400 shrink-0">
+                  {new Date(notif.createdAt).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

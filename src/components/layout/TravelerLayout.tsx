@@ -23,6 +23,7 @@ import {
   Bot,
 } from 'lucide-react';
 import { MOCK_TRAVELER_PROFILE } from '@/domains/traveler/traveler.data';
+import { sharedNotificationStore } from '@/domains/communications';
 import { env } from '@/config/env';
 
 export const TravelerLayout: React.FC = () => {
@@ -52,6 +53,8 @@ export const TravelerLayout: React.FC = () => {
     return 'Search destinations, bookings...';
   };
 
+  const unreadCount = sharedNotificationStore.getUnreadCount(user?.id || 'usr_traveler_01');
+
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/journeys', label: 'My Journeys', icon: Briefcase },
@@ -60,7 +63,7 @@ export const TravelerLayout: React.FC = () => {
     { to: '/explore-destinations', label: 'Explore Destinations', icon: Globe },
     { to: '/preferences', label: 'AI Travel Agent', icon: Bot, badge: 'AI' },
     { to: '/payments', label: 'Payments', icon: Wallet },
-    { to: '/notifications', label: 'Notifications', icon: Bell, badge: 3 },
+    { to: '/notifications', label: 'Notifications', icon: Bell, badge: unreadCount > 0 ? unreadCount : undefined },
     { to: '/support', label: 'Support', icon: HelpCircle },
   ];
 

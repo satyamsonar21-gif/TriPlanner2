@@ -1798,6 +1798,134 @@ export const AI_TOOL_DEFINITIONS: Record<AiToolName, AiToolDefinition> = {
       };
     },
   },
+
+  get_traveler_notifications: {
+    name: 'get_traveler_notifications',
+    description: 'Retrieve authorized notifications and operational narratives for the authenticated traveler.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      const travelerId = (args.travelerId as string) || ctx.sessionActor.actorId;
+      const unreadOnly = (args.unreadOnly as boolean) ?? false;
+      const notifs = sharedCommunicationOrchestrator.getTravelerNotifications(travelerId, { unreadOnly });
+      const facts: GroundedFactReference[] = notifs.slice(0, 5).map((n) => ({
+        factId: `FACT-NOTIF-${n.id}`,
+        sourceType: 'NOTIFICATION_RECORD',
+        sourceEntityId: n.id,
+        sourceTimestamp: n.createdAt,
+        label: `Notification: ${n.title}`,
+        authoritativeValue: `${n.priority} | ${n.lifecycleState} | ${n.contextSummary.whatHappened}`,
+      }));
+      return {
+        data: { notifications: notifs, count: notifs.length },
+        summary: `Retrieved ${notifs.length} notification(s) for traveler "${travelerId}".`,
+        facts,
+      };
+    },
+  },
+
+  get_operator_attention_queue: {
+    name: 'get_operator_attention_queue',
+    description: 'Retrieve high-priority disruption and operational alerts requiring operator attention.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, ctx) => {
+      const tenantId = (args.tenantId as string) || ctx.sessionActor.actorOrganizationId || 'org_goa_ops_01';
+      const queue = sharedCommunicationOrchestrator.getOperatorAttentionQueue(tenantId);
+      const facts: GroundedFactReference[] = queue.slice(0, 5).map((n) => ({
+        factId: `FACT-OP-QUEUE-${n.id}`,
+        sourceType: 'OPERATIONAL_QUEUE_RECORD',
+        sourceEntityId: n.id,
+        sourceTimestamp: n.createdAt,
+        label: `Attention Item: ${n.title}`,
+        authoritativeValue: `${n.priority} priority - ${n.contextSummary.whatHappened}`,
+      }));
+      return {
+        data: { queue, count: queue.length },
+        summary: `Operator attention queue contains ${queue.length} actionable item(s).`,
+        facts,
+      };
+    },
+  },
+
+  draft_disruption_communication: {
+    name: 'draft_disruption_communication',
+    description: 'Draft a polite, reassuring, fact-grounded communication for operator review before sending to travelers.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['operator', 'coordinator', 'admin'],
+    timeoutMs: 2500,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const journeyId = (args.journeyId as string) || 'jrn_goa_01';
+      const disruptionReason = (args.disruptionReason as string) || 'supplier cancellation';
+      const replacementTitle = (args.replacementTitle as string) || 'Mandovi River Mangrove Kayaking';
+      const refundAmountFormatted = (args.refundAmountFormatted as string) || '₹3,700';
+
+      const draftBody = `Dear Traveler, We want to inform you that due to ${disruptionReason}, your scheduled activity has been adjusted. We have reserved ${replacementTitle} for you at the same time slot, protecting your downstream dinner arrangements. A refund difference of ${refundAmountFormatted} has been credited to your payment method. Please let us know if you have any questions!`;
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-COMM-DRAFT-${journeyId}`,
+          sourceType: 'COMMUNICATION_RECORD',
+          sourceEntityId: journeyId,
+          sourceTimestamp: new Date().toISOString(),
+          label: 'Draft Communication Proposal',
+          authoritativeValue: `Draft prepared for ${journeyId}. Zero direct transmission.`,
+        },
+      ];
+
+      return {
+        data: {
+          draftSubject: `Update on your trip: Scheduled activity adjustment`,
+          draftBody,
+          suggestedActionLabel: 'Review Itinerary',
+          requiresHumanOperatorSend: true,
+        },
+        summary: `Prepared fact-grounded communication draft for operator review. No message was sent.`,
+        facts,
+      };
+    },
+  },
+
+  explain_notification: {
+    name: 'explain_notification',
+    description: 'Explain the root cause and downstream operational impact behind a notification.',
+    permissionLevel: 'READ_ONLY',
+    allowedRoles: ['traveler', 'operator', 'coordinator', 'admin'],
+    timeoutMs: 2000,
+    auditRequired: false,
+    handler: async (args, _ctx) => {
+      const notificationId = args.notificationId as string;
+      const notif =
+        sharedCommunicationOrchestrator.getTravelerNotifications('usr_traveler_01').find((n) => n.id === notificationId) ||
+        sharedCommunicationOrchestrator.getOperatorAttentionQueue().find((n) => n.id === notificationId);
+
+      const summary = notif
+        ? `Notification Explanation: ${notif.contextSummary.whatHappened} Why it matters: ${notif.contextSummary.whyItMatters}. Action: ${notif.contextSummary.whatActionRequired || 'None'}.`
+        : `Notification ${notificationId} not found.`;
+
+      const facts: GroundedFactReference[] = [
+        {
+          factId: `FACT-EXPLAIN-NOTIF-${notificationId}`,
+          sourceType: 'NOTIFICATION_RECORD',
+          sourceEntityId: notificationId,
+          sourceTimestamp: new Date().toISOString(),
+          label: 'Notification Root Cause Explanation',
+          authoritativeValue: summary,
+        },
+      ];
+
+      return {
+        data: { notificationId, contextSummary: notif?.contextSummary },
+        summary,
+        facts,
+      };
+    },
+  },
 };
 
 export class AiToolRegistry {

@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 export const PreferencesPage: React.FC = () => {
   return (
-    <div className="space-y-6 font-body pb-12 max-w-6xl mx-auto w-full">
+    <div className="space-y-6 font-body pb-6 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       {/* ──────────────────────────────────────────────────────────── */}
       {/* 1. EDITORIAL HERO HEADER                                     */}
       {/* ──────────────────────────────────────────────────────────── */}

@@ -1,5 +1,4 @@
 import type {
-  CommunicationChannel,
   NotificationRecord,
   NotificationDelivery,
   DeadLetterRecord,

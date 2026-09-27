@@ -404,7 +404,7 @@ export class JourneyBookingCoordinator {
     );
 
     // If refund was processed, emit refund_succeeded event
-    if (refundRecord && refundRecord.state === 'SUCCEEDED') {
+    if (refundRecord && (refundRecord.state === 'REFUNDED' || refundRecord.state === 'PARTIALLY_REFUNDED')) {
       await sharedCommunicationOrchestrator.ingestEvent(
         CommunicationEventFactory.createEvent({
           eventType: 'refund_succeeded',

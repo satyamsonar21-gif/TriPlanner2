@@ -388,7 +388,7 @@ export const TravelAgentChatbox: React.FC<TravelAgentChatboxProps> = ({
 
   return (
     <div
-      className={`bg-[#FFF9F3] border border-[#33231E]/15 rounded-2xl shadow-xs overflow-hidden font-body flex flex-row h-[720px] relative ${className}`}
+      className={`bg-[#FFF9F3] border border-[#33231E]/15 rounded-2xl shadow-xs overflow-hidden font-body flex flex-row h-[calc(100vh-180px)] min-h-[600px] relative ${className}`}
     >
       {/* ──────────────────────────────────────────────────────────── */}
       {/* 1. PRIMARY CHAT WORKSPACE (LEFT COLUMN)                      */}
@@ -451,7 +451,7 @@ export const TravelAgentChatbox: React.FC<TravelAgentChatboxProps> = ({
 
         {/* Scrollable Conversation Stream */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#FAF4ED]/50">
-          <div className="max-w-3xl mx-auto w-full space-y-4">
+          <div className="max-w-5xl mx-auto w-full space-y-4">
             {messages.map((msg) => {
               const isUser = msg.sender === 'user';
               return (
@@ -650,7 +650,7 @@ export const TravelAgentChatbox: React.FC<TravelAgentChatboxProps> = ({
           }}
           className="p-3 sm:p-4 bg-soft-ivory border-t border-[#33231E]/15 shrink-0"
         >
-          <div className="max-w-3xl mx-auto w-full flex items-center gap-2 p-1.5 bg-[#FAF4ED] border border-[#33231E]/20 rounded-2xl focus-within:border-terracotta focus-within:ring-2 focus-within:ring-terracotta/15 transition-all shadow-2xs">
+          <div className="max-w-5xl mx-auto w-full flex items-center gap-2 p-1.5 bg-[#FAF4ED] border border-[#33231E]/20 rounded-2xl focus-within:border-terracotta focus-within:ring-2 focus-within:ring-terracotta/15 transition-all shadow-2xs">
             <input
               ref={inputRef}
               type="text"

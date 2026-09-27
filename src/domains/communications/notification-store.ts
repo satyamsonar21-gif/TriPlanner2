@@ -1,6 +1,5 @@
 import type {
   NotificationRecord,
-  NotificationLifecycleState,
 } from './types';
 
 export class NotificationStore {
@@ -103,7 +102,7 @@ export class NotificationStore {
     return count;
   }
 
-  public acknowledge(id: string, actorId: string, notes?: string): NotificationRecord {
+  public acknowledge(id: string, _actorId?: string, _notes?: string): NotificationRecord {
     const notif = this.notifications.get(id);
     if (!notif) {
       throw new Error(`Notification "${id}" not found.`);
@@ -114,7 +113,7 @@ export class NotificationStore {
     return this.save(notif);
   }
 
-  public resolve(id: string, actorId: string, notes?: string): NotificationRecord {
+  public resolve(id: string, _actorId?: string, _notes?: string): NotificationRecord {
     const notif = this.notifications.get(id);
     if (!notif) {
       throw new Error(`Notification "${id}" not found.`);
@@ -139,7 +138,11 @@ export class NotificationStore {
           n.actionRequired ||
           n.category === 'DISRUPTION' ||
           n.category === 'SAFETY';
-        return isActionable && n.lifecycleState !== 'RESOLVED';
+        const isOperatorTargeted =
+          n.recipientRole === 'operator' ||
+          n.recipientRole === 'coordinator' ||
+          n.recipientRole === 'admin';
+        return isOperatorTargeted && isActionable && n.lifecycleState !== 'RESOLVED';
       })
       .sort((a, b) => {
         // Critical first, then by date descending

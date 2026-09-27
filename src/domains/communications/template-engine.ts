@@ -25,7 +25,7 @@ export class TemplateEngine {
   public static render(
     event: CommunicationEvent,
     recipientRole: UserRole,
-    locale: string = 'en-US'
+    _locale: string = 'en-US'
   ): RenderedTemplate {
     const payload = event.payload || {};
     const sanitizedTitle = this.sanitize((payload.title as string) || (payload.itemTitle as string) || 'Activity');

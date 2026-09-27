@@ -21,6 +21,7 @@ export const OperatorLayout: React.FC = () => {
     { to: '/operator/customers', label: 'Traveler Roster', icon: Users },
     { to: '/operator/vendors', label: 'Vendor Directory', icon: Store },
     { to: '/operator/changes', label: 'Disruption Center', icon: ShieldAlert },
+    { to: '/operator/attention', label: 'Attention Center', icon: ShieldAlert },
     { to: '/operator/payments', label: 'Payments', icon: DollarSign },
     { to: '/operator/reports', label: 'Analytics', icon: BarChart3 },
     { to: '/operator/settings', label: 'Settings', icon: Settings },

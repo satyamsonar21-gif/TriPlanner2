@@ -2,7 +2,6 @@ import type {
   CommunicationEvent,
   NotificationCategory,
   NotificationPriority,
-  NotificationSeverity,
   NotificationPreferences,
   CommunicationChannel,
 } from './types';
